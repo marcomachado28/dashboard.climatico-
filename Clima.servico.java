@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 public class ClimaServico {
     
-    private static final String API_KEY = "SUA_API_KEY_AQUI"; 
+    private static final String API_KEY = "67e042f57f0fde4c1d51473209a47847"; 
     private static final String BASE_URL = "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=metric&lang=pt_br";
 
     public Clima buscarClima(String nomeCidade) throws Exception {
