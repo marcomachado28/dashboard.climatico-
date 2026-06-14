@@ -54,6 +54,18 @@ Crie um banco de dados chamado projeto_climatico e execute o script contido na s
 ## Configurando a Aplicação Java
 No arquivo src/main/resources/application.properties do seu projeto Spring Boot, ajuste as credenciais de acesso ao banco:
 
+# 🌍 Sistema de Monitorização Climática e Emissões
+
+Este projeto é uma aplicação Java (Spring Boot) desenvolvida para a monitorização de estações climatéricas, leitura de sensores e controlo de fontes de emissão regionais. A infraestrutura foi desenhada seguindo práticas modernas de DevOps, contando com banco de dados na nuvem, testes automatizados (CI) e deploy contínuo (CD).
+
+---
+
+## 🏗️ 1. Arquitetura da Infraestrutura
+
+O ecossistema da aplicação está dividido em três pilares principais:
+1. **Base de Dados (Neon.tech):** Instância PostgreSQL na nuvem que armazena os dados operacionais.
+2. **Integração Contínua (GitHub Actions):** Validação automatizada do código a cada `git push`.
+3. **Deploy Contínuo (Railway.app):** A aplicação é compilada via `Dockerfile` e publicada automaticamente, gerando um link público.
 
 ## 🛠️ Configuração do Banco de Dados na Nuvem (Neon)
 
