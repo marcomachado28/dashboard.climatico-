@@ -1,13 +1,4 @@
-package com.clima.modelo;
-
-public class Clima {    
-    private String city; 
-    private String cidade;
-    private double temperatura;
-    private int umidade;
-    private String descricao;
-
-    public Clima(String cidade, double temperatura, int umidade, String descricao) {        
+public Clima(String cidade, double temperatura, int umidade, String descricao) {        
         this.cidade = cidade;
         this.temperatura = temperatura;
         this.umidade = umidade;
