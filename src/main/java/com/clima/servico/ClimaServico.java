@@ -1,16 +1,18 @@
 package com.clima.servico;
 
+import com.clima.modelo.Clima;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.clima.modelo.Clima;
+import org.springframework.stereotype.Service;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+@Service
 public class ClimaServico {
     
     private static final String API_KEY = "67e042f57f0fde4c1d51473209a47847"; 
@@ -31,9 +33,9 @@ public class ClimaServico {
         if (response.statusCode() == 200) {
             return mapearJsonParaObjeto(response.body());
         } else if (response.statusCode() == 404) {
-            throw new RuntimeException("Cidade não encontrada. Verifique o nome.");
+            throw new RuntimeException("Cidade não encontrada no OpenWeather. Verifique o nome.");
         } else {
-            throw new RuntimeException("Erro ao conectar com o serviço de clima.");
+            throw new RuntimeException("Erro ao conectar com o serviço de clima. Status: " + response.statusCode());
         }
     }
 
