@@ -530,6 +530,48 @@ body {
     margin-bottom: 0.25rem;
 }
 
+/* Dica global acima dos formulários */
+.form-hint-global {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: var(--border-radius);
+    padding: 0.5rem 0.75rem;
+    line-height: 1.5;
+}
+
+.form-hint-global i {
+    color: var(--accent-blue);
+    margin-right: 0.3rem;
+}
+
+/* Caixa de contexto dinâmico por formulário */
+.form-context-box {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    background: var(--bg-color);
+    border-left: 3px solid var(--accent-cyan);
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    min-height: 2.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.form-context-box:empty { display: none; }
+
+/* Label "opcional" */
+.label-opt {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+}
+
 /* Forms Styling */
 .data-form {
     background: var(--bg-color);

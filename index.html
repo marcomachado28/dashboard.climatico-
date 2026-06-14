@@ -164,125 +164,133 @@
             <!-- Coluna Direita: Cadastro + Tabelas -->
             <section class="forms-column">
 
-                <!-- Card: Cadastro Rápido -->
+                <!-- Card: Inserção Manual de Dados -->
                 <div class="chart-container">
                     <div class="chart-header">
-                        <h3><i class="fa-solid fa-square-plus" aria-hidden="true"></i> Cadastro Rápido</h3>
+                        <h3><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Inserção Manual de Dados</h3>
                     </div>
 
-                    <div class="form-group" style="margin-bottom:.75rem">
-                        <label for="select-cadastro-tipo">O que deseja cadastrar?</label>
-                        <select id="select-cadastro-tipo" aria-label="Selecione o tipo de cadastro">
-                            <option value="regiao">1. Nova Região Geográfica</option>
-                            <option value="estacao">2. Nova Estação (precisa de Região)</option>
-                            <option value="sensor">3. Novo Sensor (precisa de Estação)</option>
-                            <option value="emissao">4. Nova Fonte de Emissão (precisa de Região)</option>
-                            <option value="leitura">5. Nova Leitura Manual (precisa de Sensor)</option>
+                    <p class="form-hint-global">
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                        A sincronização automática já adiciona cidades do mundo todo. Use este painel para inserir dados extras manualmente — como uma estação específica, um sensor personalizado ou uma fonte de emissão industrial.
+                    </p>
+
+                    <div class="form-group" style="margin-bottom:.5rem; margin-top:.75rem">
+                        <label for="select-cadastro-tipo">O que você quer adicionar agora?</label>
+                        <select id="select-cadastro-tipo" aria-label="Selecione o tipo de dado a inserir">
+                            <option value="regiao">🌎 Uma nova cidade ou região</option>
+                            <option value="estacao">📡 Uma estação de monitoramento (precisa de uma cidade)</option>
+                            <option value="sensor">🔬 Um sensor ambiental (precisa de uma estação)</option>
+                            <option value="emissao">🏭 Uma fábrica ou fonte de poluição (precisa de uma cidade)</option>
+                            <option value="leitura">📊 Uma medição de sensor (precisa de um sensor)</option>
                         </select>
                     </div>
 
-                    <!-- Guia visual de fluxo -->
-                    <div class="db-flow-guide" role="img" aria-label="Fluxo de cadastro: Região, Estação, Sensor, Leitura">
-                        <div class="flow-step" title="Passo 1: Cadastre a Região">
+                    <!-- Contexto dinâmico por formulário -->
+                    <div id="form-context" class="form-context-box"></div>
+
+                    <!-- Guia visual de hierarquia -->
+                    <div class="db-flow-guide" role="img" aria-label="Ordem de cadastro">
+                        <div class="flow-step" title="Primeiro: adicione a cidade">
                             <span class="flow-badge" aria-hidden="true">1</span>
-                            <span class="flow-name">Região</span>
+                            <span class="flow-name">Cidade</span>
                         </div>
                         <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-                        <div class="flow-step" title="Passo 2: Cadastre a Estação">
+                        <div class="flow-step" title="Depois: adicione a estação">
                             <span class="flow-badge" aria-hidden="true">2</span>
                             <span class="flow-name">Estação</span>
                         </div>
                         <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-                        <div class="flow-step" title="Passo 3: Cadastre o Sensor">
+                        <div class="flow-step" title="Depois: adicione o sensor">
                             <span class="flow-badge" aria-hidden="true">3</span>
                             <span class="flow-name">Sensor</span>
                         </div>
                         <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
-                        <div class="flow-step" title="Passo 4: Registre Leituras">
+                        <div class="flow-step" title="Por fim: registre medições">
                             <span class="flow-badge" aria-hidden="true">4</span>
-                            <span class="flow-name">Leitura</span>
+                            <span class="flow-name">Medição</span>
                         </div>
                     </div>
 
                     <div id="forms-container">
 
                         <!-- Form 1: Região -->
-                        <form id="form-regiao" class="data-form show" aria-label="Formulário de cadastro de região" novalidate>
+                        <form id="form-regiao" class="data-form show" aria-label="Adicionar cidade ou região" novalidate>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="reg-nome">Nome da Região *</label>
-                                    <input type="text" id="reg-nome" required placeholder="Ex: Brasília" aria-required="true">
+                                    <label for="reg-nome">Nome da cidade *</label>
+                                    <input type="text" id="reg-nome" required placeholder="Ex: Manaus" aria-required="true">
                                 </div>
                                 <div class="form-group">
-                                    <label for="reg-estado">UF/Estado</label>
-                                    <input type="text" id="reg-estado" placeholder="Ex: DF">
+                                    <label for="reg-estado">Estado (UF)</label>
+                                    <input type="text" id="reg-estado" placeholder="Ex: AM">
                                 </div>
-                            </div>
-                            <div class="form-row">
                                 <div class="form-group">
                                     <label for="reg-pais">País *</label>
                                     <input type="text" id="reg-pais" required value="Brasil" aria-required="true">
                                 </div>
+                            </div>
+                            <div class="form-row">
                                 <div class="form-group">
-                                    <label for="reg-lat">Latitude</label>
-                                    <input type="number" id="reg-lat" step="0.000001" placeholder="-15.7938">
+                                    <label for="reg-lat">Latitude <span class="label-opt">(opcional)</span></label>
+                                    <input type="number" id="reg-lat" step="0.000001" placeholder="-3.1019">
                                 </div>
                                 <div class="form-group">
-                                    <label for="reg-lon">Longitude</label>
-                                    <input type="number" id="reg-lon" step="0.000001" placeholder="-47.8827">
+                                    <label for="reg-lon">Longitude <span class="label-opt">(opcional)</span></label>
+                                    <input type="number" id="reg-lon" step="0.000001" placeholder="-60.0250">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Região</button>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar cidade</button>
                         </form>
 
                         <!-- Form 2: Estação -->
-                        <form id="form-estacao" class="data-form" aria-label="Formulário de cadastro de estação" novalidate>
+                        <form id="form-estacao" class="data-form" aria-label="Adicionar estação de monitoramento" novalidate>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="est-nome">Nome da Estação *</label>
-                                    <input type="text" id="est-nome" required placeholder="Ex: Estação Central Leste" aria-required="true">
+                                    <label for="est-nome">Nome da estação *</label>
+                                    <input type="text" id="est-nome" required placeholder="Ex: Estação Zona Norte" aria-required="true">
                                 </div>
                                 <div class="form-group">
-                                    <label for="est-regiao">Região Vinculada *</label>
+                                    <label for="est-regiao">Em qual cidade? *</label>
                                     <select id="est-regiao" required aria-required="true">
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione a cidade...</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="est-data">Data de Instalação</label>
+                                    <label for="est-data">Data de instalação <span class="label-opt">(opcional)</span></label>
                                     <input type="date" id="est-data">
                                 </div>
                                 <div class="form-group">
-                                    <label for="est-status">Status Operacional</label>
+                                    <label for="est-status">Status atual</label>
                                     <select id="est-status">
                                         <option value="Ativa">Ativa</option>
-                                        <option value="Manutenção">Manutenção</option>
+                                        <option value="Manutenção">Em manutenção</option>
                                         <option value="Inativa">Inativa</option>
                                     </select>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Estação</button>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar estação</button>
                         </form>
 
                         <!-- Form 3: Sensor -->
-                        <form id="form-sensor" class="data-form" aria-label="Formulário de cadastro de sensor" novalidate>
+                        <form id="form-sensor" class="data-form" aria-label="Adicionar sensor ambiental" novalidate>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="sens-estacao">Estação Vinculada *</label>
+                                    <label for="sens-estacao">Em qual estação? *</label>
                                     <select id="sens-estacao" required aria-required="true">
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione a estação...</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="sens-tipo">Tipo de Sensor *</label>
+                                    <label for="sens-tipo">O que este sensor mede? *</label>
                                     <select id="sens-tipo" required aria-required="true">
-                                        <option value="Temperatura">Temperatura</option>
-                                        <option value="Umidade">Umidade</option>
-                                        <option value="CO2">Concentração de CO2</option>
-                                        <option value="Poeira/Partículas">Qualidade do Ar (PM2.5)</option>
-                                        <option value="Pressão">Pressão Atmosférica</option>
+                                        <option value="Temperatura">🌡️ Temperatura</option>
+                                        <option value="Umidade">💧 Umidade do ar</option>
+                                        <option value="CO2">💨 Concentração de CO2</option>
+                                        <option value="Poeira/Partículas">🌫️ Qualidade do ar (PM2.5)</option>
+                                        <option value="Pressão">🔵 Pressão atmosférica</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -290,55 +298,55 @@
                                     <input type="text" id="sens-unidade" required value="°C" aria-required="true">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Sensor</button>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar sensor</button>
                         </form>
 
                         <!-- Form 4: Emissão -->
-                        <form id="form-emissao" class="data-form" aria-label="Formulário de cadastro de fonte de emissão" novalidate>
+                        <form id="form-emissao" class="data-form" aria-label="Adicionar fonte de poluição industrial" novalidate>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="em-empresa">Nome da Empresa/Local *</label>
+                                    <label for="em-empresa">Nome da fábrica ou local *</label>
                                     <input type="text" id="em-empresa" required placeholder="Ex: Metalúrgica Alfa S.A." aria-required="true">
                                 </div>
                                 <div class="form-group">
-                                    <label for="em-regiao">Região Vinculada *</label>
+                                    <label for="em-regiao">Em qual cidade? *</label>
                                     <select id="em-regiao" required aria-required="true">
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione a cidade...</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="em-poluente">Tipo de Poluente *</label>
-                                    <input type="text" id="em-poluente" required placeholder="Ex: CO2" aria-required="true">
+                                    <label for="em-poluente">Tipo de poluente emitido *</label>
+                                    <input type="text" id="em-poluente" required placeholder="Ex: CO2, fumaça, partículas" aria-required="true">
                                 </div>
                                 <div class="form-group">
-                                    <label for="em-estimativa">Emissão Anual (t) *</label>
+                                    <label for="em-estimativa">Toneladas emitidas por ano *</label>
                                     <input type="number" id="em-estimativa" step="0.01" required placeholder="Ex: 150.0" aria-required="true">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Emissão</button>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar fonte de poluição</button>
                         </form>
 
                         <!-- Form 5: Leitura -->
-                        <form id="form-leitura" class="data-form" aria-label="Formulário de cadastro de leitura" novalidate>
+                        <form id="form-leitura" class="data-form" aria-label="Registrar medição manual" novalidate>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="leit-sensor">Sensor Vinculado *</label>
+                                    <label for="leit-sensor">Qual sensor fez a medição? *</label>
                                     <select id="leit-sensor" required aria-required="true">
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione o sensor...</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="leit-valor">Valor Medido *</label>
+                                    <label for="leit-valor">Valor registrado *</label>
                                     <input type="number" id="leit-valor" step="0.01" required placeholder="Ex: 24.5" aria-required="true">
                                 </div>
                                 <div class="form-group">
-                                    <label for="leit-data">Data/Hora</label>
+                                    <label for="leit-data">Quando? <span class="label-opt">(padrão: agora)</span></label>
                                     <input type="datetime-local" id="leit-data">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Leitura</button>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar medição</button>
                         </form>
                     </div>
                 </div>

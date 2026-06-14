@@ -313,8 +313,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Alternar formulários com base no select
         const selectCadastroTipo = document.getElementById('select-cadastro-tipo');
-        const flowSteps = document.querySelectorAll('.flow-step');
-        const formMap = { regiao: 0, estacao: 1, sensor: 2, leitura: 3, emissao: 0 };
+        const flowSteps  = document.querySelectorAll('.flow-step');
+        const contextBox = document.getElementById('form-context');
+        const formMap    = { regiao: 0, estacao: 1, sensor: 2, leitura: 3, emissao: 0 };
+
+        const contextMessages = {
+            regiao:  { icon: '🌎', text: 'Você está adicionando uma <strong>cidade ou região</strong>. Ela vai aparecer no filtro do painel e poderá receber estações e fábricas.' },
+            estacao: { icon: '📡', text: 'Você está adicionando uma <strong>estação de monitoramento</strong> dentro de uma cidade já cadastrada. A estação vai abrigar sensores.' },
+            sensor:  { icon: '🔬', text: 'Você está adicionando um <strong>sensor</strong> a uma estação. Depois de criado, você pode registrar medições dele.' },
+            emissao: { icon: '🏭', text: 'Você está registrando uma <strong>fábrica ou fonte de poluição</strong>. O valor de emissão anual aparece no gráfico de emissões.' },
+            leitura: { icon: '📊', text: 'Você está registrando uma <strong>medição manual</strong> de um sensor. O valor vai aparecer nos gráficos e na tabela de leituras.' },
+        };
 
         function updateActiveForm() {
             const val = selectCadastroTipo.value;
@@ -323,6 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
             flowSteps.forEach((step, i) => {
                 step.classList.toggle('active', i === formMap[val]);
             });
+            if (contextBox && contextMessages[val]) {
+                const { icon, text } = contextMessages[val];
+                contextBox.innerHTML = `<span>${icon}</span> <span>${text}</span>`;
+            }
         }
 
         if (selectCadastroTipo) {
