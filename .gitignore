@@ -1,0 +1,21 @@
+# Build e dependências Maven
+target/
+*.class
+*.jar
+*.war
+
+# IDE e sistema
+.idea/
+*.iml
+.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Relatórios e PDFs de entrega (não vão pro repositório)
+*.pdf
+relatorio_entrega*
+relatorio-entrega*
+
+# Variáveis de ambiente locais
+.env
+.env.local

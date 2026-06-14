@@ -1,66 +1,57 @@
 // JavaScript Controller - Dashboard Climático
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- STATE MANAGEMENT ---
+    // --- STATE ---
     let API_URL = localStorage.getItem('backend_api_url');
     if (!API_URL || API_URL.includes('localhost') || API_URL.includes('127.0.0.1')) {
         API_URL = 'https://dashboard-climatico-b0zc.onrender.com';
         localStorage.setItem('backend_api_url', API_URL);
     }
     let isBackendOnline = false;
-    let dataState = {
-        regioes: [],
-        estacoes: [],
-        sensores: [],
-        leituras: [],
-        emissoes: []
-    };
-
-    // Chart References
+    let isFetching = false;
+    let dataState = { regioes: [], estacoes: [], sensores: [], leituras: [], emissoes: [] };
     let climaticChart = null;
     let emissionsChart = null;
 
     // --- UI ELEMENTS ---
     const backendUrlInput = document.getElementById('backend-url');
-    const btnSaveConfig = document.getElementById('btn-save-config');
-    const btnToggleConfig = document.getElementById('btn-toggle-config');
-    const configDropdown = document.getElementById('config-dropdown');
-    const apiStatus = document.getElementById('api-status');
-    const btnSync = document.getElementById('btn-sync');
-    const cityInput = document.getElementById('city-input');
+    const btnSaveConfig    = document.getElementById('btn-save-config');
+    const btnToggleConfig  = document.getElementById('btn-toggle-config');
+    const configDropdown   = document.getElementById('config-dropdown');
+    const apiStatus        = document.getElementById('api-status');
+    const btnSync          = document.getElementById('btn-sync');
+    const cityInput        = document.getElementById('city-input');
     const btnRefreshCharts = document.getElementById('btn-refresh-charts');
+    const lastUpdatedEl    = document.getElementById('last-updated');
 
-    // Forms
-    const formRegiao = document.getElementById('form-regiao');
+    const formRegiao  = document.getElementById('form-regiao');
     const formEstacao = document.getElementById('form-estacao');
-    const formSensor = document.getElementById('form-sensor');
+    const formSensor  = document.getElementById('form-sensor');
     const formEmissao = document.getElementById('form-emissao');
     const formLeitura = document.getElementById('form-leitura');
 
-    // Table Bodies
-    const tableRegioes = document.getElementById('table-body-regioes');
+    const tableRegioes  = document.getElementById('table-body-regioes');
     const tableEstacoes = document.getElementById('table-body-estacoes');
     const tableSensores = document.getElementById('table-body-sensores');
     const tableEmissoes = document.getElementById('table-body-emissoes');
     const tableLeituras = document.getElementById('table-body-leituras');
 
-    // Dropdowns
-    const selectEstRegiao = document.getElementById('est-regiao');
-    const selectSensEstacao = document.getElementById('sens-estacao');
-    const selectEmRegiao = document.getElementById('em-regiao');
-    const selectLeitSensor = document.getElementById('leit-sensor');
+    const selectEstRegiao      = document.getElementById('est-regiao');
+    const selectSensEstacao    = document.getElementById('sens-estacao');
+    const selectEmRegiao       = document.getElementById('em-regiao');
+    const selectLeitSensor     = document.getElementById('leit-sensor');
     const selectDashboardFilter = document.getElementById('dashboard-region-filter');
 
-    // Set Initial Input Value
     backendUrlInput.value = API_URL;
 
-    // --- INITIALIZATION ---
+    // --- INIT ---
     checkBackendStatus();
     setupEventListeners();
-    // Periodically poll backend status
+    // Verificar backend a cada 15s; atualizar dados a cada 30s
     setInterval(checkBackendStatus, 15000);
+    setInterval(() => { if (isBackendOnline) fetchAllData(); }, 30000);
 
-    // --- CONFIGURATION LOGIC ---
+    // --- CONFIG ---
     btnToggleConfig.addEventListener('click', (e) => {
         e.stopPropagation();
         configDropdown.classList.toggle('show');
@@ -73,38 +64,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnSaveConfig.addEventListener('click', () => {
-        let url = backendUrlInput.value.trim();
-        if (url.endsWith('/')) {
-            url = url.slice(0, -1); // Remove trailing slash
-        }
+        let url = backendUrlInput.value.trim().replace(/\/$/, '');
         API_URL = url;
         localStorage.setItem('backend_api_url', url);
         configDropdown.classList.remove('show');
         showToast('URL do Backend atualizada!');
+        isBackendOnline = false;
         checkBackendStatus();
     });
 
-    // --- TABS SYSTEM ---
-    const tabButtons = document.querySelectorAll('.tab-btn');
+    // --- TABS ---
+    const tabButtons  = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
+    function activateTab(tabId) {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        const pane = document.getElementById(tabId);
+        if (btn) btn.classList.add('active');
+        if (pane) pane.classList.add('active');
+    }
+
     tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetTab = btn.getAttribute('data-tab');
-            
-            tabButtons.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            
-            btn.classList.add('active');
-            document.getElementById(targetTab).classList.add('active');
-        });
+        btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab')));
     });
 
-    // --- API STATUS & FETCH LOGIC ---
+    // --- BACKEND STATUS ---
     async function checkBackendStatus() {
         try {
-            const response = await fetch(`${API_URL}/api/regioes`, { method: 'GET', signal: AbortSignal.timeout(4000) });
-            if (response.ok) {
+            const res = await fetch(`${API_URL}/api/regioes`, { method: 'GET', signal: AbortSignal.timeout(5000) });
+            if (res.ok) {
                 updateStatusUI(true);
                 if (!isBackendOnline) {
                     isBackendOnline = true;
@@ -114,28 +104,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatusUI(false);
                 isBackendOnline = false;
             }
-        } catch (error) {
+        } catch {
             updateStatusUI(false);
             isBackendOnline = false;
         }
     }
 
     function updateStatusUI(online) {
-        const dot = apiStatus.querySelector('.status-dot');
+        const dot  = apiStatus.querySelector('.status-dot');
         const text = apiStatus.querySelector('.status-text');
-        if (online) {
-            dot.className = 'status-dot online';
-            text.textContent = 'Backend Online';
-        } else {
-            dot.className = 'status-dot offline';
-            text.textContent = 'Backend Offline';
-        }
+        dot.className  = `status-dot ${online ? 'online' : 'offline'}`;
+        text.textContent = online ? 'Backend Online' : 'Backend Offline';
     }
 
-    // Load all data
+    // --- FETCH ---
     async function fetchAllData() {
-        if (!isBackendOnline) return;
-        
+        if (!isBackendOnline || isFetching) return;
+        isFetching = true;
+
+        // Ícone de carregamento no botão de refresh
+        if (btnRefreshCharts) {
+            btnRefreshCharts.innerHTML = '<i class="fa-solid fa-arrow-rotate-right fa-spin-manual"></i>';
+        }
+
         try {
             const [reg, est, sens, leit, em] = await Promise.all([
                 fetch(`${API_URL}/api/regioes`).then(r => r.json()),
@@ -145,20 +136,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetch(`${API_URL}/api/emissoes`).then(r => r.json())
             ]);
 
-            dataState.regioes = reg || [];
-            dataState.estacoes = est || [];
-            dataState.sensores = sens || [];
-            dataState.leituras = leit || [];
-            dataState.emissoes = em || [];
+            dataState.regioes  = reg   || [];
+            dataState.estacoes = est   || [];
+            dataState.sensores = sens  || [];
+            dataState.leituras = leit  || [];
+            dataState.emissoes = em    || [];
 
             updateDashboardUI();
-        } catch (error) {
-            console.error("Erro ao carregar dados do backend:", error);
-            showToast("Erro ao sincronizar com o backend!");
+            updateLastUpdatedTime();
+        } catch (err) {
+            console.error('Erro ao carregar dados:', err);
+            showToast('Erro ao sincronizar com o backend!');
+        } finally {
+            isFetching = false;
+            if (btnRefreshCharts) {
+                btnRefreshCharts.innerHTML = '<i class="fa-solid fa-arrow-rotate-right"></i>';
+            }
         }
     }
 
-    // --- UI UPDATE LOGIC ---
+    function updateLastUpdatedTime() {
+        if (!lastUpdatedEl) return;
+        const now = new Date();
+        const hh  = String(now.getHours()).padStart(2, '0');
+        const mm  = String(now.getMinutes()).padStart(2, '0');
+        const ss  = String(now.getSeconds()).padStart(2, '0');
+        lastUpdatedEl.textContent = `Atualizado às ${hh}:${mm}:${ss}`;
+    }
+
+    // --- UI UPDATE ---
     function updateDashboardUI() {
         populateTables();
         populateDropdowns();
@@ -169,59 +175,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateMetrics() {
         const filterVal = selectDashboardFilter.value || 'all';
-        
-        let readings = [...dataState.leituras];
+        let readings  = [...dataState.leituras];
         let emissions = [...dataState.emissoes];
-        let stations = [...dataState.estacoes];
-        
+        let stations  = [...dataState.estacoes];
+
         if (filterVal !== 'all') {
             const regId = Number(filterVal);
-            stations = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            stations  = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
             const stationIds = stations.map(e => e.idEstacao);
-            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+            readings  = readings.filter(l => l.sensor?.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
             emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
         }
 
-        // Temp Average
-        const tempReadings = readings.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'temperatura');
-        const tempSum = tempReadings.reduce((sum, r) => sum + Number(r.valorMedido), 0);
-        const tempAvg = tempReadings.length > 0 ? (tempSum / tempReadings.length).toFixed(1) : '--';
-        document.getElementById('val-temp-avg').textContent = tempAvg !== '--' ? `${tempAvg}°C` : '--°C';
+        const tempReadings = readings.filter(l => l.sensor?.tipoSensor?.toLowerCase() === 'temperatura');
+        const tempSum  = tempReadings.reduce((s, r) => s + Number(r.valorMedido), 0);
+        const tempAvg  = tempReadings.length ? (tempSum / tempReadings.length).toFixed(1) : '--';
+        document.getElementById('val-temp-avg').textContent   = tempAvg !== '--' ? `${tempAvg}°C` : '--°C';
         document.getElementById('val-temp-count').textContent = `${tempReadings.length} medições`;
 
-        // Humidity Average
-        const humidityReadings = readings.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'umidade');
-        const humiditySum = humidityReadings.reduce((sum, r) => sum + Number(r.valorMedido), 0);
-        const humidityAvg = humidityReadings.length > 0 ? (humiditySum / humidityReadings.length).toFixed(0) : '--';
-        document.getElementById('val-humidity-avg').textContent = humidityAvg !== '--' ? `${humidityAvg}%` : '--%';
-        document.getElementById('val-humidity-count').textContent = `${humidityReadings.length} medições`;
+        const humReadings = readings.filter(l => l.sensor?.tipoSensor?.toLowerCase() === 'umidade');
+        const humSum  = humReadings.reduce((s, r) => s + Number(r.valorMedido), 0);
+        const humAvg  = humReadings.length ? (humSum / humReadings.length).toFixed(0) : '--';
+        document.getElementById('val-humidity-avg').textContent   = humAvg !== '--' ? `${humAvg}%` : '--%';
+        document.getElementById('val-humidity-count').textContent = `${humReadings.length} medições`;
 
-        // Stations Count
         document.getElementById('val-stations-count').textContent = stations.length;
-        document.getElementById('val-regions-count').textContent = `${dataState.regioes.length} Regiões cadastradas`;
+        document.getElementById('val-regions-count').textContent  = `${dataState.regioes.length} Regiões cadastradas`;
 
-        // Emissions Total
-        const totalEmissions = emissions.reduce((sum, e) => sum + Number(e.emissaoAnualEstimada), 0);
+        const totalEmissions = emissions.reduce((s, e) => s + Number(e.emissaoAnualEstimada), 0);
         document.getElementById('val-emissions-total').textContent = `${totalEmissions.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} t`;
-        document.getElementById('val-sources-count').textContent = `${emissions.length} Fontes industriais`;
+        document.getElementById('val-sources-count').textContent   = `${emissions.length} Fontes industriais`;
     }
 
     function populateTables() {
         const filterVal = selectDashboardFilter.value || 'all';
-        
-        let readings = [...dataState.leituras];
+        let readings  = [...dataState.leituras];
         let emissions = [...dataState.emissoes];
-        let stations = [...dataState.estacoes];
-        
+        let stations  = [...dataState.estacoes];
+
         if (filterVal !== 'all') {
             const regId = Number(filterVal);
-            stations = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            stations  = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
             const stationIds = stations.map(e => e.idEstacao);
-            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+            readings  = readings.filter(l => l.sensor?.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
             emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
         }
 
-        // Regiões Table (not filtered)
         tableRegioes.innerHTML = dataState.regioes.map(r => `
             <tr>
                 <td>${r.idRegiao}</td>
@@ -230,96 +229,108 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${r.pais}</td>
                 <td>${r.latitude && r.longitude ? `${r.latitude}, ${r.longitude}` : 'Sem coordenadas'}</td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma região cadastrada</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma região cadastrada</td></tr>';
 
-        // Estações Table
         tableEstacoes.innerHTML = stations.map(e => `
             <tr>
                 <td>${e.idEstacao}</td>
                 <td><strong>${e.nomeEstacao}</strong></td>
-                <td>${e.regiao ? e.regiao.nomeRegiao : '--'}</td>
+                <td>${e.regiao?.nomeRegiao || '--'}</td>
                 <td>${e.dataInstalacao ? new Date(e.dataInstalacao).toLocaleDateString('pt-BR') : '--'}</td>
                 <td><span class="badge ${getBadgeClass(e.statusOperacional)}">${e.statusOperacional}</span></td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma estação correspondente</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma estação correspondente</td></tr>';
 
-        // Sensores Table
         tableSensores.innerHTML = dataState.sensores.map(s => `
             <tr>
                 <td>${s.idSensor}</td>
-                <td>${s.estacao ? s.estacao.nomeEstacao : '--'}</td>
+                <td>${s.estacao?.nomeEstacao || '--'}</td>
                 <td><strong>${s.tipoSensor}</strong></td>
                 <td>${s.unidadeMedida}</td>
             </tr>
-        `).join('') || '<tr><td colspan="4" style="text-align:center;">Nenhum sensor cadastrado</td></tr>';
+        `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">Nenhum sensor cadastrado</td></tr>';
 
-        // Emissões Table
         tableEmissoes.innerHTML = emissions.map(e => `
             <tr>
                 <td>${e.idFonte}</td>
                 <td><strong>${e.nomeEmpresaLocal}</strong></td>
-                <td>${e.regiao ? e.regiao.nomeRegiao : '--'}</td>
+                <td>${e.regiao?.nomeRegiao || '--'}</td>
                 <td>${e.tipoPoluente}</td>
                 <td>${Number(e.emissaoAnualEstimada).toLocaleString('pt-BR')} t</td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma fonte de emissão correspondente</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma fonte de emissão correspondente</td></tr>';
 
-        // Leituras Table
         tableLeituras.innerHTML = readings.map(l => `
             <tr>
                 <td>#${l.idLeitura}</td>
-                <td>${l.sensor && l.sensor.estacao ? l.sensor.estacao.nomeEstacao : '--'} ➔ <strong>${l.sensor ? l.sensor.tipoSensor : '--'}</strong></td>
-                <td>${l.sensor ? l.sensor.tipoSensor : '--'}</td>
-                <td style="color: ${l.sensor && l.sensor.tipoSensor.toLowerCase() === 'temperatura' ? 'var(--accent-rose)' : 'var(--accent-cyan)'}">
-                    <strong>${Number(l.valorMedido).toFixed(1)} ${l.sensor ? l.sensor.unidadeMedida : ''}</strong>
+                <td>${l.sensor?.estacao?.nomeEstacao || '--'} ➔ <strong>${l.sensor?.tipoSensor || '--'}</strong></td>
+                <td>${l.sensor?.tipoSensor || '--'}</td>
+                <td style="color: ${l.sensor?.tipoSensor?.toLowerCase() === 'temperatura' ? 'var(--accent-red)' : 'var(--accent-cyan)'}">
+                    <strong>${Number(l.valorMedido).toFixed(1)} ${l.sensor?.unidadeMedida || ''}</strong>
                 </td>
                 <td>${formatDateTime(l.dataHoraLeitura)}</td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma leitura correspondente</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhuma leitura correspondente</td></tr>';
     }
 
     function getBadgeClass(status) {
-        if (!status) return 'badge-active';
-        switch (status.toLowerCase()) {
-            case 'ativa': return 'badge-active';
+        switch ((status || '').toLowerCase()) {
+            case 'ativa':      return 'badge-active';
             case 'manutenção': return 'badge-maint';
-            case 'inativa': return 'badge-inactive';
-            default: return 'badge-active';
+            case 'inativa':    return 'badge-inactive';
+            default:           return 'badge-active';
         }
     }
 
     function formatDateTime(dateTimeStr) {
         if (!dateTimeStr) return '--';
-        const d = new Date(dateTimeStr);
-        return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        return new Date(dateTimeStr).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
     function populateDropdowns() {
-        // Estações Regiões
-        const regOptions = `<option value="">Selecione...</option>` + dataState.regioes.map(r => `<option value="${r.idRegiao}">${r.nomeRegiao}</option>`).join('');
+        const regOptions = `<option value="">Selecione...</option>` +
+            dataState.regioes.map(r => `<option value="${r.idRegiao}">${r.nomeRegiao}</option>`).join('');
         selectEstRegiao.innerHTML = regOptions;
-        selectEmRegiao.innerHTML = regOptions;
+        selectEmRegiao.innerHTML  = regOptions;
 
-        // Filtro Global de Região
-        const selectedFilterVal = selectDashboardFilter.value || 'all';
-        selectDashboardFilter.innerHTML = `<option value="all">Todas as Regiões (Geral)</option>` + dataState.regioes.map(r => `<option value="${r.idRegiao}">${r.nomeRegiao}</option>`).join('');
-        selectDashboardFilter.value = selectedFilterVal;
+        const savedFilter = selectDashboardFilter.value || 'all';
+        selectDashboardFilter.innerHTML = `<option value="all">Todas as Regiões (Geral)</option>` +
+            dataState.regioes.map(r => `<option value="${r.idRegiao}">${r.nomeRegiao}</option>`).join('');
+        selectDashboardFilter.value = savedFilter;
 
-        // Sensores Estações
-        const estOptions = `<option value="">Selecione...</option>` + dataState.estacoes.map(e => `<option value="${e.idEstacao}">${e.nomeEstacao}</option>`).join('');
-        selectSensEstacao.innerHTML = estOptions;
+        selectSensEstacao.innerHTML = `<option value="">Selecione...</option>` +
+            dataState.estacoes.map(e => `<option value="${e.idEstacao}">${e.nomeEstacao}</option>`).join('');
 
-        // Leituras Sensores
-        selectLeitSensor.innerHTML = `<option value="">Selecione...</option>` + dataState.sensores.map(s => `
-            <option value="${s.idSensor}">
-                ${s.estacao ? s.estacao.nomeEstacao : 'Estação Desconhecida'} ➔ ${s.tipoSensor} (${s.unidadeMedida})
-            </option>
-        `).join('');
+        selectLeitSensor.innerHTML = `<option value="">Selecione...</option>` +
+            dataState.sensores.map(s => `
+                <option value="${s.idSensor}">
+                    ${s.estacao?.nomeEstacao || 'Estação ?'} ➔ ${s.tipoSensor} (${s.unidadeMedida})
+                </option>
+            `).join('');
     }
 
-    // --- FORM ACTIONS ---
+    // --- EVENT LISTENERS ---
     function setupEventListeners() {
-        // Filtro de Região do Dashboard
+        // Alternar formulários com base no select
+        const selectCadastroTipo = document.getElementById('select-cadastro-tipo');
+        const flowSteps = document.querySelectorAll('.flow-step');
+        const formMap = { regiao: 0, estacao: 1, sensor: 2, leitura: 3, emissao: 0 };
+
+        function updateActiveForm() {
+            const val = selectCadastroTipo.value;
+            [formRegiao, formEstacao, formSensor, formEmissao, formLeitura].forEach(f => f?.classList.remove('show'));
+            document.getElementById(`form-${val}`)?.classList.add('show');
+            flowSteps.forEach((step, i) => {
+                step.classList.toggle('active', i === formMap[val]);
+            });
+        }
+
+        if (selectCadastroTipo) {
+            selectCadastroTipo.addEventListener('change', updateActiveForm);
+            updateActiveForm();
+        }
+
+        // Filtro global de região
         selectDashboardFilter.addEventListener('change', () => {
             calculateMetrics();
             populateTables();
@@ -327,236 +338,183 @@ document.addEventListener('DOMContentLoaded', () => {
             renderEmissionsChart();
         });
 
-        // OpenWeather Synchronizer
+        // Presets de cidades rápidas
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const city = btn.getAttribute('data-city');
+                cityInput.value = city;
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                btnSync.click();
+            });
+        });
+
+        // Remover destaque do preset ao digitar manualmente
+        cityInput.addEventListener('input', () => {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        });
+
+        // Sincronizar cidade com OpenWeather
         btnSync.addEventListener('click', async () => {
             const cidade = cityInput.value.trim();
-            if (!cidade) {
-                showToast("Por favor, digite o nome de uma cidade!");
-                return;
-            }
-
-            if (!isBackendOnline) {
-                showToast("Erro: Conecte o Backend Java antes de sincronizar!");
-                return;
-            }
+            if (!cidade) { showToast('Por favor, digite o nome de uma cidade!'); return; }
+            if (!isBackendOnline) { showToast('Erro: Conecte o Backend Java antes de sincronizar!'); return; }
 
             btnSync.disabled = true;
-            btnSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...`;
-
+            btnSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Buscando...`;
             try {
-                const response = await fetch(`${API_URL}/api/clima/sincronizar?cidade=${encodeURIComponent(cidade)}`, { method: 'POST' });
-                if (response.ok) {
-                    const clima = await response.json();
-                    showToast(`Clima de ${clima.cidade} sincronizado e salvo no Neon DB!`);
-                    fetchAllData();
+                const res = await fetch(`${API_URL}/api/clima/sincronizar?cidade=${encodeURIComponent(cidade)}`, { method: 'POST' });
+                if (res.ok) {
+                    const clima = await res.json();
+                    showToast(`Clima de ${clima.cidade} sincronizado e salvo no banco!`);
+                    await fetchAllData();
+                    activateTab('tab-leituras');
                 } else {
-                    const text = await response.text();
-                    showToast(`Falha: ${text}`);
+                    showToast(`Falha: ${await res.text()}`);
                 }
-            } catch (error) {
-                console.error(error);
-                showToast("Erro de rede ao sincronizar clima!");
-            } finally {
+            } catch { showToast('Erro de rede ao sincronizar clima!'); }
+            finally {
                 btnSync.disabled = false;
-                btnSync.innerHTML = `<i class="fa-solid fa-rotate"></i> Sincronizar`;
+                btnSync.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Buscar`;
             }
         });
 
-        // Refresh Charts Button
-        btnRefreshCharts.addEventListener('click', () => {
-            fetchAllData();
-            showToast("Dados atualizados!");
+        // Atualizar dados manualmente
+        btnRefreshCharts.addEventListener('click', async () => {
+            await fetchAllData();
+            showToast('Dados atualizados!');
         });
 
-        // Form Submit: Região
+        // Unidade automática no sensor
+        document.getElementById('sens-tipo').addEventListener('change', (e) => {
+            const units = { 'Temperatura': '°C', 'Umidade': '%', 'CO2': 'ppm', 'Poeira/Partículas': 'µg/m³', 'Pressão': 'hPa' };
+            document.getElementById('sens-unidade').value = units[e.target.value] || '';
+        });
+
+        // Submits dos formulários
         formRegiao.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                nomeRegiao: document.getElementById('reg-nome').value,
+            await postData('/api/regioes', {
+                nomeRegiao:      document.getElementById('reg-nome').value,
                 estadoProvincia: document.getElementById('reg-estado').value,
-                pais: document.getElementById('reg-pais').value,
-                latitude: document.getElementById('reg-lat').value ? Number(document.getElementById('reg-lat').value) : null,
-                longitude: document.getElementById('reg-lon').value ? Number(document.getElementById('reg-lon').value) : null
-            };
-            await postData('/api/regioes', data, formRegiao, "Região adicionada!");
+                pais:            document.getElementById('reg-pais').value,
+                latitude:  parseFloatOrNull('reg-lat'),
+                longitude: parseFloatOrNull('reg-lon')
+            }, formRegiao, 'Região adicionada!', 'tab-regioes');
         });
 
-        // Form Submit: Estação
         formEstacao.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                nomeEstacao: document.getElementById('est-nome').value,
-                regiao: { idRegiao: Number(document.getElementById('est-regiao').value) },
-                dataInstalacao: document.getElementById('est-data').value || null,
+            await postData('/api/estacoes', {
+                nomeEstacao:       document.getElementById('est-nome').value,
+                regiao:            { idRegiao: Number(document.getElementById('est-regiao').value) },
+                dataInstalacao:    document.getElementById('est-data').value || null,
                 statusOperacional: document.getElementById('est-status').value
-            };
-            await postData('/api/estacoes', data, formEstacao, "Estação adicionada!");
+            }, formEstacao, 'Estação adicionada!', 'tab-estacoes');
         });
 
-        // Form Submit: Sensor
         formSensor.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                estacao: { idEstacao: Number(document.getElementById('sens-estacao').value) },
-                tipoSensor: document.getElementById('sens-tipo').value,
+            await postData('/api/sensores', {
+                estacao:      { idEstacao: Number(document.getElementById('sens-estacao').value) },
+                tipoSensor:   document.getElementById('sens-tipo').value,
                 unidadeMedida: document.getElementById('sens-unidade').value
-            };
-            await postData('/api/sensores', data, formSensor, "Sensor cadastrado!");
+            }, formSensor, 'Sensor cadastrado!', 'tab-sensores');
         });
 
-        // Form Submit: Emissão
         formEmissao.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                nomeEmpresaLocal: document.getElementById('em-empresa').value,
-                regiao: { idRegiao: Number(document.getElementById('em-regiao').value) },
-                tipoPoluente: document.getElementById('em-poluente').value,
-                emissaoAnualEstimada: Number(document.getElementById('em-estimativa').value)
-            };
-            await postData('/api/emissoes', data, formEmissao, "Fonte de emissão salva!");
+            await postData('/api/emissoes', {
+                nomeEmpresaLocal:      document.getElementById('em-empresa').value,
+                regiao:                { idRegiao: Number(document.getElementById('em-regiao').value) },
+                tipoPoluente:          document.getElementById('em-poluente').value,
+                emissaoAnualEstimada:  Number(document.getElementById('em-estimativa').value)
+            }, formEmissao, 'Fonte de emissão salva!', 'tab-emissoes');
         });
 
-        // Form Submit: Leitura
         formLeitura.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                sensor: { idSensor: Number(document.getElementById('leit-sensor').value) },
-                valorMedido: Number(document.getElementById('leit-valor').value),
-                dataHoraLeitura: document.getElementById('leit-data').value ? new Date(document.getElementById('leit-data').value).toISOString() : null
-            };
-            await postData('/api/leituras', data, formLeitura, "Leitura registrada com sucesso!");
-        });
-
-        // Automatically set unit field in Sensor Form
-        document.getElementById('sens-tipo').addEventListener('change', (e) => {
-            const val = e.target.value;
-            const unitInput = document.getElementById('sens-unidade');
-            if (val === 'Temperatura') unitInput.value = '°C';
-            else if (val === 'Umidade') unitInput.value = '%';
-            else if (val === 'CO2') unitInput.value = 'ppm';
-            else if (val === 'Poeira/Partículas') unitInput.value = 'µg/m³';
-            else if (val === 'Pressão') unitInput.value = 'hPa';
+            const dtVal = document.getElementById('leit-data').value;
+            await postData('/api/leituras', {
+                sensor:          { idSensor: Number(document.getElementById('leit-sensor').value) },
+                valorMedido:     Number(document.getElementById('leit-valor').value),
+                dataHoraLeitura: dtVal ? new Date(dtVal).toISOString() : null
+            }, formLeitura, 'Leitura registrada!', 'tab-leituras');
         });
     }
 
-    async function postData(endpoint, data, form, successMsg) {
-        if (!isBackendOnline) {
-            showToast("Erro: O backend Java está offline!");
-            return;
-        }
+    function parseFloatOrNull(id) {
+        const v = document.getElementById(id).value;
+        return v ? Number(v) : null;
+    }
 
+    async function postData(endpoint, data, form, successMsg, tabToShow) {
+        if (!isBackendOnline) { showToast('Erro: O backend Java está offline!'); return; }
         try {
-            const response = await fetch(`${API_URL}${endpoint}`, {
+            const res = await fetch(`${API_URL}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
-            if (response.ok) {
+            if (res.ok) {
                 showToast(successMsg);
                 form.reset();
-                fetchAllData();
+                await fetchAllData();
+                if (tabToShow) activateTab(tabToShow);
             } else {
-                const text = await response.text();
-                showToast(`Erro ao salvar: ${text}`);
+                showToast(`Erro ao salvar: ${await res.text()}`);
             }
-        } catch (error) {
-            showToast("Erro de conexão ao enviar dados!");
-            console.error(error);
-        }
+        } catch { showToast('Erro de conexão ao enviar dados!'); }
     }
 
-    // --- CHARTS GENERATION (CHART.JS) ---
+    // --- CHARTS ---
     function renderClimaticChart() {
         const ctx = document.getElementById('climaticChart').getContext('2d');
-        
-        // Destroy old chart if exists
-        if (climaticChart) {
-            climaticChart.destroy();
-        }
+        if (climaticChart) climaticChart.destroy();
 
         const filterVal = selectDashboardFilter.value || 'all';
         let readings = [...dataState.leituras];
         if (filterVal !== 'all') {
             const regId = Number(filterVal);
-            const stations = dataState.estacoes.filter(e => e.regiao && e.regiao.idRegiao === regId);
-            const stationIds = stations.map(e => e.idEstacao);
-            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+            const ids   = dataState.estacoes.filter(e => e.regiao?.idRegiao === regId).map(e => e.idEstacao);
+            readings    = readings.filter(l => l.sensor?.estacao && ids.includes(l.sensor.estacao.idEstacao));
         }
 
-        // Filter readings and sort chronologically (oldest to newest)
-        const readingsSorted = readings
-            .filter(l => l.dataHoraLeitura)
-            .sort((a, b) => new Date(a.dataHoraLeitura) - new Date(b.dataHoraLeitura));
+        const sorted   = readings.filter(l => l.dataHoraLeitura).sort((a, b) => new Date(a.dataHoraLeitura) - new Date(b.dataHoraLeitura));
+        const tempData = sorted.filter(r => r.sensor?.tipoSensor?.toLowerCase() === 'temperatura').slice(-15);
+        const humData  = sorted.filter(r => r.sensor?.tipoSensor?.toLowerCase() === 'umidade').slice(-15);
 
-        const tempReadings = readingsSorted.filter(r => r.sensor && r.sensor.tipoSensor.toLowerCase() === 'temperatura').slice(-15);
-        const humReadings = readingsSorted.filter(r => r.sensor && r.sensor.tipoSensor.toLowerCase() === 'umidade').slice(-15);
-
-        // Standard labels (times)
         const labels = Array.from(new Set([
-            ...tempReadings.map(r => formatDateTime(r.dataHoraLeitura)),
-            ...humReadings.map(r => formatDateTime(r.dataHoraLeitura))
+            ...tempData.map(r => formatDateTime(r.dataHoraLeitura)),
+            ...humData.map(r => formatDateTime(r.dataHoraLeitura))
         ])).slice(-15);
-
-        const tempDataset = tempReadings.map(r => Number(r.valorMedido));
-        const humDataset = humReadings.map(r => Number(r.valorMedido));
 
         climaticChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels,
+                labels,
                 datasets: [
                     {
                         label: 'Temperatura (°C)',
-                        data: tempDataset,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#ef4444',
-                        tension: 0.35,
-                        fill: true,
-                        yAxisID: 'y'
+                        data: tempData.map(r => Number(r.valorMedido)),
+                        borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)',
+                        borderWidth: 3, pointBackgroundColor: '#ef4444', tension: 0.35, fill: true, yAxisID: 'y'
                     },
                     {
                         label: 'Umidade (%)',
-                        data: humDataset,
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#06b6d4',
-                        tension: 0.35,
-                        fill: true,
-                        yAxisID: 'y1'
+                        data: humData.map(r => Number(r.valorMedido)),
+                        borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.1)',
+                        borderWidth: 3, pointBackgroundColor: '#06b6d4', tension: 0.35, fill: true, yAxisID: 'y1'
                     }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#cbd5e1', font: { family: 'Inter' } }
-                    }
-                },
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'Inter' } } } },
                 scales: {
-                    x: {
-                        grid: { color: 'rgba(255,255,255,0.03)' },
-                        ticks: { color: '#94a3b8', font: { family: 'Inter' } }
-                    },
-                    y: {
-                        title: { display: true, text: 'Temperatura (°C)', color: '#ef4444' },
-                        grid: { color: 'rgba(255,255,255,0.03)' },
-                        ticks: { color: '#94a3b8' },
-                        position: 'left'
-                    },
-                    y1: {
-                        title: { display: true, text: 'Umidade (%)', color: '#06b6d4' },
-                        grid: { drawOnChartArea: false },
-                        ticks: { color: '#94a3b8' },
-                        position: 'right',
-                        min: 0,
-                        max: 100
-                    }
+                    x:  { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8', font: { family: 'Inter' } } },
+                    y:  { title: { display: true, text: 'Temperatura (°C)', color: '#ef4444' }, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8' }, position: 'left' },
+                    y1: { title: { display: true, text: 'Umidade (%)', color: '#06b6d4' }, grid: { drawOnChartArea: false }, ticks: { color: '#94a3b8' }, position: 'right', min: 0, max: 100 }
                 }
             }
         });
@@ -564,105 +522,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderEmissionsChart() {
         const ctx = document.getElementById('emissionsChart').getContext('2d');
-
-        if (emissionsChart) {
-            emissionsChart.destroy();
-        }
+        if (emissionsChart) emissionsChart.destroy();
 
         const filterVal = selectDashboardFilter.value || 'all';
         let emissions = [...dataState.emissoes];
-        const emissionsMap = {};
-        let labelName = 'Emissões Totais por Região';
+        const map = {};
 
         if (filterVal !== 'all') {
-            const regId = Number(filterVal);
-            emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
-            emissions.forEach(e => {
-                const sourceName = e.nomeEmpresaLocal || 'Desconhecido';
-                emissionsMap[sourceName] = (emissionsMap[sourceName] || 0) + Number(e.emissaoAnualEstimada);
-            });
-            labelName = 'Emissões Industriais da Região (t)';
+            emissions = emissions.filter(e => e.regiao?.idRegiao === Number(filterVal));
+            emissions.forEach(e => { const k = e.nomeEmpresaLocal || 'Desconhecido'; map[k] = (map[k] || 0) + Number(e.emissaoAnualEstimada); });
         } else {
-            emissions.forEach(e => {
-                const regName = e.regiao ? e.regiao.nomeRegiao : 'Outros';
-                emissionsMap[regName] = (emissionsMap[regName] || 0) + Number(e.emissaoAnualEstimada);
-            });
+            emissions.forEach(e => { const k = e.regiao?.nomeRegiao || 'Outros'; map[k] = (map[k] || 0) + Number(e.emissaoAnualEstimada); });
         }
-
-        const labels = Object.keys(emissionsMap);
-        const data = Object.values(emissionsMap);
 
         emissionsChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
-                datasets: [{
-                    label: labelName,
-                    data: data,
-                    backgroundColor: 'rgba(16, 185, 129, 0.45)',
-                    borderColor: '#10b981',
-                    borderWidth: 2,
-                    borderRadius: 6
-                }]
+                labels: Object.keys(map),
+                datasets: [{ label: 'Emissões (t)', data: Object.values(map), backgroundColor: 'rgba(16,185,129,0.45)', borderColor: '#10b981', borderWidth: 2, borderRadius: 6 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: { color: '#cbd5e1' }
-                    }
-                },
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#cbd5e1' } } },
                 scales: {
-                    x: {
-                        grid: { color: 'rgba(255,255,255,0.03)' },
-                        ticks: { color: '#94a3b8' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Toneladas (t)', color: '#94a3b8' },
-                        grid: { color: 'rgba(255,255,255,0.03)' },
-                        ticks: { color: '#94a3b8' }
-                    }
+                    x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8' } },
+                    y: { title: { display: true, text: 'Toneladas (t)', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#94a3b8' } }
                 }
             }
         });
     }
 
-    // --- DYNAMIC NOTIFICATION SYSTEM ---
+    // --- TOAST ---
     function showToast(message) {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification glass';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            color: var(--text-primary);
-            border-left: 4px solid var(--accent-cyan);
-            z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.85rem;
-            font-weight: 500;
-        `;
-        toast.innerHTML = `<i class="fa-solid fa-bell" style="color:var(--accent-cyan); margin-right: 0.6rem;"></i> ${message}`;
-        document.body.appendChild(toast);
-
-        // Slide animation injection
         if (!document.getElementById('toast-style')) {
             const style = document.createElement('style');
             style.id = 'toast-style';
             style.innerHTML = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
+                @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
             `;
             document.head.appendChild(style);
         }
-
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.style.cssText = `
+            position:fixed; bottom:20px; right:20px; padding:.85rem 1.25rem;
+            color:var(--text-primary); border-left:4px solid var(--accent-cyan);
+            z-index:1000; box-shadow:0 10px 25px rgba(0,0,0,.5);
+            animation:slideIn .3s cubic-bezier(.4,0,.2,1); font-size:.85rem; font-weight:500;
+            background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--border-radius);
+        `;
+        toast.innerHTML = `<i class="fa-solid fa-bell" style="color:var(--accent-cyan);margin-right:.5rem;"></i>${message}`;
+        document.body.appendChild(toast);
         setTimeout(() => {
-            toast.style.animation = 'slideIn 0.3s reverse forwards';
+            toast.style.animation = 'slideIn .3s reverse forwards';
             setTimeout(() => toast.remove(), 300);
         }, 4000);
     }

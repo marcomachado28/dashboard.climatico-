@@ -3,43 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌍 Dashboard Climático & Emissões</title>
-    <!-- Google Fonts: Inter -->
+    <title>Dashboard Climático &amp; Emissões</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- CSS stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="app-header">
         <div class="header-logo">
-            <div class="logo-icon">
+            <div class="logo-icon" aria-hidden="true">
                 <i class="fa-solid fa-earth-americas"></i>
             </div>
             <div class="logo-text">
                 <h1>Dashboard Climático</h1>
-                <p>Sistema de Monitoramento Ambiental & Controle de Emissões</p>
+                <p>Sistema de Monitoramento Ambiental &amp; Controle de Emissões</p>
             </div>
         </div>
 
         <div class="header-controls">
-            <!-- Backend URL Configuration -->
             <div class="api-config">
-                <i class="fa-solid fa-gear" id="btn-toggle-config" title="Configurar URL do Backend"></i>
-                <div class="config-dropdown" id="config-dropdown">
+                <button id="btn-toggle-config" aria-label="Configurar URL do Backend" title="Configurar URL do Backend">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <div class="config-dropdown" id="config-dropdown" role="dialog" aria-label="Configuração da API">
                     <label for="backend-url">URL da API Java:</label>
-                    <input type="text" id="backend-url" value="https://dashboard-climatico-b0zc.onrender.com" placeholder="Ex: http://localhost:8080">
+                    <input type="url" id="backend-url" value="https://dashboard-climatico-b0zc.onrender.com" placeholder="Ex: http://localhost:8080" aria-label="URL do Backend">
                     <button id="btn-save-config">Salvar</button>
                 </div>
             </div>
 
-            <!-- API Status -->
-            <div class="status-indicator" id="api-status">
+            <div class="status-indicator" id="api-status" role="status" aria-live="polite">
                 <span class="status-dot offline"></span>
                 <span class="status-text">Backend Offline</span>
             </div>
@@ -47,364 +43,375 @@
     </header>
 
     <main class="app-main">
-        <!-- Section 1: Quick Sync and Query -->
-        <section class="sync-panel glass">
+
+        <!-- Busca de Clima por Cidade -->
+        <section class="sync-panel glass sync-panel-expanded" aria-label="Buscar clima de uma cidade">
             <div class="sync-info">
-                <h3><i class="fa-solid fa-cloud-sun"></i> Sincronização em Tempo Real (Java ➔ OpenWeather API)</h3>
-                <p>Insira o nome de uma cidade para consultar o clima na OpenWeather, criar a região/estação no banco de dados e registrar leituras.</p>
+                <h3><i class="fa-solid fa-earth-americas" aria-hidden="true"></i> Buscar Clima — Qualquer cidade do mundo</h3>
+                <p>Digite o nome de qualquer cidade e clique em <strong>Buscar</strong>. Os dados de temperatura e umidade aparecem nos gráficos e tabelas abaixo.</p>
             </div>
-            <div class="sync-form">
-                <input type="text" id="city-input" placeholder="Ex: Brasília, Rio de Janeiro, Tokyo..." value="Brasília">
-                <button id="btn-sync" class="btn-primary">
-                    <i class="fa-solid fa-rotate"></i> Sincronizar
-                </button>
+            <div class="sync-block">
+                <div class="sync-form">
+                    <label for="city-input" class="sr-only">Nome da cidade</label>
+                    <input type="text" id="city-input" placeholder="Ex: São Paulo, Tokyo, New York, Paris..." aria-label="Nome da cidade">
+                    <button id="btn-sync" class="btn-primary" aria-label="Buscar clima da cidade">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar
+                    </button>
+                </div>
+                <div class="city-presets" aria-label="Cidades rápidas">
+                    <span class="presets-label">Acesso rápido:</span>
+                    <button class="preset-btn" data-city="Brasília">🇧🇷 Brasília</button>
+                    <button class="preset-btn" data-city="São Paulo">🇧🇷 São Paulo</button>
+                    <button class="preset-btn" data-city="New York">🇺🇸 New York</button>
+                    <button class="preset-btn" data-city="London">🇬🇧 London</button>
+                    <button class="preset-btn" data-city="Tokyo">🇯🇵 Tokyo</button>
+                    <button class="preset-btn" data-city="Paris">🇫🇷 Paris</button>
+                    <button class="preset-btn" data-city="Sydney">🇦🇺 Sydney</button>
+                </div>
             </div>
         </section>
 
         <!-- Filtro Global de Região -->
-        <section class="sync-panel" style="padding: 0.75rem 1.25rem;">
-            <div class="sync-info" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; width: 100%;">
-                <label for="dashboard-region-filter" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
-                    <i class="fa-solid fa-filter" style="color: var(--accent-blue);"></i> Filtrar Painel Geral por Região:
-                </label>
-                <select id="dashboard-region-filter" style="background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: var(--border-radius); padding: 0.35rem 0.75rem; font-size: 0.8rem; outline: none; cursor: pointer; min-width: 200px;">
-                    <option value="all">Todas as Regiões (Geral)</option>
-                </select>
-            </div>
+        <section class="sync-panel filter-bar" aria-label="Filtro global por região">
+            <label for="dashboard-region-filter">
+                <i class="fa-solid fa-filter" aria-hidden="true"></i> Filtrar por Região:
+            </label>
+            <select id="dashboard-region-filter" aria-label="Filtrar painel por região">
+                <option value="all">Todas as Regiões (Geral)</option>
+            </select>
         </section>
 
-        <!-- Section 2: Cards Grid -->
-        <section class="metrics-grid">
+        <!-- Cards de Métricas -->
+        <section class="metrics-grid" aria-label="Resumo de métricas">
             <div class="metric-card glass">
-                <div class="card-icon temp-icon">
+                <div class="card-icon temp-icon" aria-hidden="true">
                     <i class="fa-solid fa-temperature-three-quarters"></i>
                 </div>
                 <div class="card-content">
                     <h4>Temperatura Média</h4>
-                    <p class="metric-value" id="val-temp-avg">--°C</p>
+                    <p class="metric-value" id="val-temp-avg" aria-live="polite">--°C</p>
                     <span class="metric-trend" id="val-temp-count">Sem leituras</span>
                 </div>
             </div>
 
             <div class="metric-card glass">
-                <div class="card-icon humidity-icon">
+                <div class="card-icon humidity-icon" aria-hidden="true">
                     <i class="fa-solid fa-droplet"></i>
                 </div>
                 <div class="card-content">
                     <h4>Umidade Média</h4>
-                    <p class="metric-value" id="val-humidity-avg">--%</p>
+                    <p class="metric-value" id="val-humidity-avg" aria-live="polite">--%</p>
                     <span class="metric-trend" id="val-humidity-count">Sem leituras</span>
                 </div>
             </div>
 
             <div class="metric-card glass">
-                <div class="card-icon station-icon">
+                <div class="card-icon station-icon" aria-hidden="true">
                     <i class="fa-solid fa-tower-broadcast"></i>
                 </div>
                 <div class="card-content">
                     <h4>Estações Operacionais</h4>
-                    <p class="metric-value" id="val-stations-count">0</p>
+                    <p class="metric-value" id="val-stations-count" aria-live="polite">0</p>
                     <span class="metric-trend" id="val-regions-count">0 Regiões cadastradas</span>
                 </div>
             </div>
 
             <div class="metric-card glass">
-                <div class="card-icon emission-icon">
+                <div class="card-icon emission-icon" aria-hidden="true">
                     <i class="fa-solid fa-industry"></i>
                 </div>
                 <div class="card-content">
                     <h4>Emissão Anual Est.</h4>
-                    <p class="metric-value" id="val-emissions-total">0.00 t</p>
+                    <p class="metric-value" id="val-emissions-total" aria-live="polite">0.00 t</p>
                     <span class="metric-trend" id="val-sources-count">0 Fontes industriais</span>
                 </div>
             </div>
         </section>
 
-        <!-- Section 3: Visual Charts and Lists -->
+        <!-- Gráficos e Formulários -->
         <div class="content-split">
-            <!-- Left: Charts -->
+
+            <!-- Coluna Esquerda: Gráficos -->
             <section class="charts-column">
                 <div class="chart-container glass">
                     <div class="chart-header">
-                        <h3><i class="fa-solid fa-chart-line"></i> Histórico Recente de Leituras</h3>
+                        <h3><i class="fa-solid fa-chart-line" aria-hidden="true"></i> Histórico Recente de Leituras</h3>
                         <div class="chart-actions">
-                            <button class="btn-icon" id="btn-refresh-charts" title="Atualizar dados"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+                            <span id="last-updated" class="live-badge">
+                                <span class="live-dot" aria-hidden="true"></span>
+                                <span>Aguardando...</span>
+                            </span>
+                            <button class="btn-icon" id="btn-refresh-charts" title="Atualizar dados" aria-label="Atualizar dados">
+                                <i class="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="chart-wrapper">
-                        <canvas id="climaticChart"></canvas>
+                        <canvas id="climaticChart" aria-label="Gráfico de temperatura e umidade" role="img"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-container glass">
                     <div class="chart-header">
-                        <h3><i class="fa-solid fa-chart-bar"></i> Fontes de Emissão Industrial</h3>
+                        <h3><i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Fontes de Emissão Industrial</h3>
                     </div>
                     <div class="chart-wrapper">
-                        <canvas id="emissionsChart"></canvas>
+                        <canvas id="emissionsChart" aria-label="Gráfico de emissões industriais" role="img"></canvas>
                     </div>
                 </div>
             </section>
 
-            <!-- Right: Tabbed Forms and Tables -->
-            <section class="forms-column glass">
-                <div class="tab-header">
-                    <button class="tab-btn active" data-tab="tab-regioes">Regiões</button>
-                    <button class="tab-btn" data-tab="tab-estacoes">Estações</button>
-                    <button class="tab-btn" data-tab="tab-sensores">Sensores</button>
-                    <button class="tab-btn" data-tab="tab-emissoes">Emissões</button>
-                    <button class="tab-btn" data-tab="tab-leituras">Leituras</button>
-                </div>
+            <!-- Coluna Direita: Cadastro + Tabelas -->
+            <section class="forms-column">
 
-                <div class="tab-content active" id="tab-regioes">
-                    <div class="tab-pane-header">
-                        <h3>Gerenciamento de Regiões</h3>
+                <!-- Card: Cadastro Rápido -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3><i class="fa-solid fa-square-plus" aria-hidden="true"></i> Cadastro Rápido</h3>
                     </div>
-                    <form id="form-regiao" class="data-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="reg-nome">Nome da Região*</label>
-                                <input type="text" id="reg-nome" required placeholder="Ex: Grande São Paulo">
-                            </div>
-                            <div class="form-group">
-                                <label for="reg-estado">Estado/Província</label>
-                                <input type="text" id="reg-estado" placeholder="Ex: SP">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="reg-pais">País*</label>
-                                <input type="text" id="reg-pais" required value="Brasil" placeholder="Ex: Brasil">
-                            </div>
-                            <div class="form-group">
-                                <label for="reg-lat">Latitude</label>
-                                <input type="number" id="reg-lat" step="0.000001" placeholder="Ex: -23.5505">
-                            </div>
-                            <div class="form-group">
-                                <label for="reg-lon">Longitude</label>
-                                <input type="number" id="reg-lon" step="0.000001" placeholder="Ex: -46.6333">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> Adicionar Região</button>
-                    </form>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th>UF</th>
-                                    <th>País</th>
-                                    <th>Coordenadas</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body-regioes">
-                                <!-- Dynamic Content -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <div class="tab-content" id="tab-estacoes">
-                    <div class="tab-pane-header">
-                        <h3>Estações de Monitoramento</h3>
+                    <div class="form-group" style="margin-bottom:.75rem">
+                        <label for="select-cadastro-tipo">O que deseja cadastrar?</label>
+                        <select id="select-cadastro-tipo" aria-label="Selecione o tipo de cadastro">
+                            <option value="regiao">1. Nova Região Geográfica</option>
+                            <option value="estacao">2. Nova Estação (precisa de Região)</option>
+                            <option value="sensor">3. Novo Sensor (precisa de Estação)</option>
+                            <option value="emissao">4. Nova Fonte de Emissão (precisa de Região)</option>
+                            <option value="leitura">5. Nova Leitura Manual (precisa de Sensor)</option>
+                        </select>
                     </div>
-                    <form id="form-estacao" class="data-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="est-nome">Nome da Estação*</label>
-                                <input type="text" id="est-nome" required placeholder="Ex: Estação Central Leste">
-                            </div>
-                            <div class="form-group">
-                                <label for="est-regiao">Região Relacionada*</label>
-                                <select id="est-regiao" required>
-                                    <option value="">Selecione...</option>
-                                    <!-- Dynamic Options -->
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="est-data">Data de Instalação</label>
-                                <input type="date" id="est-data">
-                            </div>
-                            <div class="form-group">
-                                <label for="est-status">Status Operacional</label>
-                                <select id="est-status">
-                                    <option value="Ativa">Ativa</option>
-                                    <option value="Manutenção">Manutenção</option>
-                                    <option value="Inativa">Inativa</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> Adicionar Estação</button>
-                    </form>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th>Região</th>
-                                    <th>Instalação</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body-estacoes">
-                                <!-- Dynamic Content -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <div class="tab-content" id="tab-sensores">
-                    <div class="tab-pane-header">
-                        <h3>Sensores Ambientais</h3>
-                    </div>
-                    <form id="form-sensor" class="data-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="sens-estacao">Estação Vinculada*</label>
-                                <select id="sens-estacao" required>
-                                    <option value="">Selecione...</option>
-                                    <!-- Dynamic Options -->
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="sens-tipo">Tipo de Sensor*</label>
-                                <select id="sens-tipo" required>
-                                    <option value="Temperatura">Temperatura</option>
-                                    <option value="Umidade">Umidade</option>
-                                    <option value="CO2">Concentração de CO2</option>
-                                    <option value="Poeira/Partículas">Qualidade do Ar (PM2.5)</option>
-                                    <option value="Pressão">Pressão Atmosférica</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="sens-unidade">Unidade de Medida*</label>
-                                <input type="text" id="sens-unidade" required placeholder="Ex: °C, %, ppm" value="°C">
-                            </div>
+                    <!-- Guia visual de fluxo -->
+                    <div class="db-flow-guide" role="img" aria-label="Fluxo de cadastro: Região, Estação, Sensor, Leitura">
+                        <div class="flow-step" title="Passo 1: Cadastre a Região">
+                            <span class="flow-badge" aria-hidden="true">1</span>
+                            <span class="flow-name">Região</span>
                         </div>
-                        <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> Adicionar Sensor</button>
-                    </form>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Estação</th>
-                                    <th>Tipo de Sensor</th>
-                                    <th>Unidade</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body-sensores">
-                                <!-- Dynamic Content -->
-                            </tbody>
-                        </table>
+                        <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="flow-step" title="Passo 2: Cadastre a Estação">
+                            <span class="flow-badge" aria-hidden="true">2</span>
+                            <span class="flow-name">Estação</span>
+                        </div>
+                        <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="flow-step" title="Passo 3: Cadastre o Sensor">
+                            <span class="flow-badge" aria-hidden="true">3</span>
+                            <span class="flow-name">Sensor</span>
+                        </div>
+                        <div class="flow-arrow" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="flow-step" title="Passo 4: Registre Leituras">
+                            <span class="flow-badge" aria-hidden="true">4</span>
+                            <span class="flow-name">Leitura</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="tab-content" id="tab-emissoes">
-                    <div class="tab-pane-header">
-                        <h3>Fontes de Emissão Industrial</h3>
-                    </div>
-                    <form id="form-emissao" class="data-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="em-empresa">Nome da Empresa/Local*</label>
-                                <input type="text" id="em-empresa" required placeholder="Ex: Metalúrgica Alfa S.A.">
+                    <div id="forms-container">
+
+                        <!-- Form 1: Região -->
+                        <form id="form-regiao" class="data-form show" aria-label="Formulário de cadastro de região" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reg-nome">Nome da Região *</label>
+                                    <input type="text" id="reg-nome" required placeholder="Ex: Brasília" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-estado">UF/Estado</label>
+                                    <input type="text" id="reg-estado" placeholder="Ex: DF">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="em-regiao">Região Vinculada*</label>
-                                <select id="em-regiao" required>
-                                    <option value="">Selecione...</option>
-                                    <!-- Dynamic Options -->
-                                </select>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="reg-pais">País *</label>
+                                    <input type="text" id="reg-pais" required value="Brasil" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-lat">Latitude</label>
+                                    <input type="number" id="reg-lat" step="0.000001" placeholder="-15.7938">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-lon">Longitude</label>
+                                    <input type="number" id="reg-lon" step="0.000001" placeholder="-47.8827">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="em-poluente">Tipo de Poluente*</label>
-                                <input type="text" id="em-poluente" required placeholder="Ex: CO2, SO2, Material Particulado">
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Região</button>
+                        </form>
+
+                        <!-- Form 2: Estação -->
+                        <form id="form-estacao" class="data-form" aria-label="Formulário de cadastro de estação" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="est-nome">Nome da Estação *</label>
+                                    <input type="text" id="est-nome" required placeholder="Ex: Estação Central Leste" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="est-regiao">Região Vinculada *</label>
+                                    <select id="est-regiao" required aria-required="true">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="em-estimativa">Emissão Anual Estimada (t)*</label>
-                                <input type="number" id="em-estimativa" step="0.01" required placeholder="Ex: 1540.50">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="est-data">Data de Instalação</label>
+                                    <input type="date" id="est-data">
+                                </div>
+                                <div class="form-group">
+                                    <label for="est-status">Status Operacional</label>
+                                    <select id="est-status">
+                                        <option value="Ativa">Ativa</option>
+                                        <option value="Manutenção">Manutenção</option>
+                                        <option value="Inativa">Inativa</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> Adicionar Fonte de Emissão</button>
-                    </form>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Empresa/Local</th>
-                                    <th>Região</th>
-                                    <th>Poluente</th>
-                                    <th>Emissão Anual</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body-emissoes">
-                                <!-- Dynamic Content -->
-                            </tbody>
-                        </table>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Estação</button>
+                        </form>
+
+                        <!-- Form 3: Sensor -->
+                        <form id="form-sensor" class="data-form" aria-label="Formulário de cadastro de sensor" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sens-estacao">Estação Vinculada *</label>
+                                    <select id="sens-estacao" required aria-required="true">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sens-tipo">Tipo de Sensor *</label>
+                                    <select id="sens-tipo" required aria-required="true">
+                                        <option value="Temperatura">Temperatura</option>
+                                        <option value="Umidade">Umidade</option>
+                                        <option value="CO2">Concentração de CO2</option>
+                                        <option value="Poeira/Partículas">Qualidade do Ar (PM2.5)</option>
+                                        <option value="Pressão">Pressão Atmosférica</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sens-unidade">Unidade *</label>
+                                    <input type="text" id="sens-unidade" required value="°C" aria-required="true">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Sensor</button>
+                        </form>
+
+                        <!-- Form 4: Emissão -->
+                        <form id="form-emissao" class="data-form" aria-label="Formulário de cadastro de fonte de emissão" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="em-empresa">Nome da Empresa/Local *</label>
+                                    <input type="text" id="em-empresa" required placeholder="Ex: Metalúrgica Alfa S.A." aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="em-regiao">Região Vinculada *</label>
+                                    <select id="em-regiao" required aria-required="true">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="em-poluente">Tipo de Poluente *</label>
+                                    <input type="text" id="em-poluente" required placeholder="Ex: CO2" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="em-estimativa">Emissão Anual (t) *</label>
+                                    <input type="number" id="em-estimativa" step="0.01" required placeholder="Ex: 150.0" aria-required="true">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Emissão</button>
+                        </form>
+
+                        <!-- Form 5: Leitura -->
+                        <form id="form-leitura" class="data-form" aria-label="Formulário de cadastro de leitura" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="leit-sensor">Sensor Vinculado *</label>
+                                    <select id="leit-sensor" required aria-required="true">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leit-valor">Valor Medido *</label>
+                                    <input type="number" id="leit-valor" step="0.01" required placeholder="Ex: 24.5" aria-required="true">
+                                </div>
+                                <div class="form-group">
+                                    <label for="leit-data">Data/Hora</label>
+                                    <input type="datetime-local" id="leit-data">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> Salvar Leitura</button>
+                        </form>
                     </div>
                 </div>
 
-                <div class="tab-content" id="tab-leituras">
-                    <div class="tab-pane-header">
-                        <h3>Histórico de Leituras Factual</h3>
+                <!-- Card: Visualizador de Dados -->
+                <div class="chart-container data-viewer">
+                    <div class="tab-header" role="tablist" aria-label="Visualizador de dados">
+                        <button class="tab-btn active" data-tab="tab-regioes" role="tab" aria-selected="true" aria-controls="tab-regioes">Regiões</button>
+                        <button class="tab-btn" data-tab="tab-estacoes" role="tab" aria-selected="false" aria-controls="tab-estacoes">Estações</button>
+                        <button class="tab-btn" data-tab="tab-sensores" role="tab" aria-selected="false" aria-controls="tab-sensores">Sensores</button>
+                        <button class="tab-btn" data-tab="tab-emissoes" role="tab" aria-selected="false" aria-controls="tab-emissoes">Emissões</button>
+                        <button class="tab-btn" data-tab="tab-leituras" role="tab" aria-selected="false" aria-controls="tab-leituras">Leituras</button>
                     </div>
-                    <form id="form-leitura" class="data-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="leit-sensor">Sensor*</label>
-                                <select id="leit-sensor" required>
-                                    <option value="">Selecione...</option>
-                                    <!-- Dynamic Options -->
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="leit-valor">Valor Medido*</label>
-                                <input type="number" id="leit-valor" step="0.01" required placeholder="Ex: 24.5">
-                            </div>
-                            <div class="form-group">
-                                <label for="leit-data">Data/Hora</label>
-                                <input type="datetime-local" id="leit-data">
-                            </div>
+
+                    <div class="tab-content active" id="tab-regioes" role="tabpanel">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Nome da Região</th><th>UF</th><th>País</th><th>Coordenadas</th></tr></thead>
+                                <tbody id="table-body-regioes"></tbody>
+                            </table>
                         </div>
-                        <button type="submit" class="btn-submit"><i class="fa-solid fa-plus"></i> Adicionar Leitura Manual</button>
-                    </form>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID Leitura</th>
-                                    <th>Estação ➔ Sensor</th>
-                                    <th>Tipo</th>
-                                    <th>Valor</th>
-                                    <th>Data / Hora</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body-leituras">
-                                <!-- Dynamic Content -->
-                            </tbody>
-                        </table>
+                    </div>
+
+                    <div class="tab-content" id="tab-estacoes" role="tabpanel">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Nome da Estação</th><th>Região</th><th>Instalação</th><th>Status</th></tr></thead>
+                                <tbody id="table-body-estacoes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-sensores" role="tabpanel">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Estação Vinculada</th><th>Tipo de Sensor</th><th>Unidade</th></tr></thead>
+                                <tbody id="table-body-sensores"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-emissoes" role="tabpanel">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Empresa/Local</th><th>Região</th><th>Poluente</th><th>Emissão Anual</th></tr></thead>
+                                <tbody id="table-body-emissoes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="tab-leituras" role="tabpanel">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>ID</th><th>Estação ➔ Sensor</th><th>Tipo</th><th>Valor</th><th>Data / Hora</th></tr></thead>
+                                <tbody id="table-body-leituras"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+
             </section>
         </div>
     </main>
 
     <footer class="app-footer">
-        <p>© 2026 Dashboard Climático. Desenvolvido para Entrega Final do Bootcamp II (Etapa 3).</p>
+        <p>© 2026 Dashboard Climático — Marco Túlio &amp; Lucas Cortez · Bootcamp II (Etapa 3)</p>
         <p class="footer-links">
-            <a href="https://github.com/marcomachado28/dashboard.climatico-" target="_blank"><i class="fa-brands fa-github"></i> Repositório</a>
+            <a href="https://github.com/marcomachado28/dashboard.climatico-" target="_blank" rel="noopener" aria-label="Repositório no GitHub">
+                <i class="fa-brands fa-github" aria-hidden="true"></i> Repositório
+            </a>
         </p>
     </footer>
 
-    <!-- JS code -->
     <script src="app.js"></script>
 </body>
 </html>
