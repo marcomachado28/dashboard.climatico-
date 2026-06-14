@@ -61,7 +61,7 @@ No arquivo src/main/resources/application.properties do seu projeto Spring Boot,
 O script abaixo cria o esquema relacional necessário para rodar o projeto (compatível com PostgreSQL, MySQL ou Oracle):
 
 ```sql
--- 1. Tabela de Regiões / Localizações Geográficas
+
 CREATE TABLE regioes (
     id_regiao SERIAL PRIMARY KEY,
     nome_regiao VARCHAR(100) NOT NULL,
@@ -71,7 +71,6 @@ CREATE TABLE regioes (
     longitude DECIMAL(9,6)
 );
 
--- 2. Tabela de Estações Meteorológicas
 CREATE TABLE estacoes_monitoramento (
     id_estacao SERIAL PRIMARY KEY,
     nome_estacao VARCHAR(100) NOT NULL,
@@ -80,7 +79,6 @@ CREATE TABLE estacoes_monitoramento (
     status_operacional VARCHAR(20) DEFAULT 'Ativa'
 );
 
--- 3. Tabela de Sensores por Estação
 CREATE TABLE sensores (
     id_sensor SERIAL PRIMARY KEY,
     id_estacao INT REFERENCES estacoes_monitoramento(id_estacao) ON DELETE CASCADE,
@@ -88,7 +86,6 @@ CREATE TABLE sensores (
     unidade_medida VARCHAR(20) NOT NULL -- Ex: °C, %, ppm
 );
 
--- 4. Tabela Factual: Leituras Climáticas Históricas
 CREATE TABLE leituras_climaticas (
     id_leitura BIGSERIAL PRIMARY KEY,
     id_sensor INT REFERENCES sensores(id_sensor) ON DELETE CASCADE,
@@ -96,7 +93,6 @@ CREATE TABLE leituras_climaticas (
     valor_medido DECIMAL(10,2) NOT NULL
 );
 
--- 5. Tabela de Fontes de Emissão (Poluição Regional)
 CREATE TABLE fontes_emissao (
     id_fonte SERIAL PRIMARY KEY,
     id_regiao INT REFERENCES regioes(id_regiao) ON DELETE SET NULL,
