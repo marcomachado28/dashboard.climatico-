@@ -1,7 +1,3 @@
-package com.clima;
-
-import com.clima.servico.ClimaServico;
-import com.clima.modelo.Clima;
 
 public class Main {
     public static void main(String[] args) {
