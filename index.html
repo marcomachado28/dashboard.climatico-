@@ -44,22 +44,29 @@
 
     <main class="app-main">
 
-        <!-- Busca de Clima por Cidade -->
-        <section class="sync-panel glass sync-panel-expanded" aria-label="Buscar clima de uma cidade">
+        <!-- Adicionar cidade ao sistema -->
+        <section class="sync-panel glass sync-panel-expanded" aria-label="Adicionar cidade ao sistema">
             <div class="sync-info">
-                <h3><i class="fa-solid fa-earth-americas" aria-hidden="true"></i> Buscar Clima — Qualquer cidade do mundo</h3>
-                <p>Digite o nome de qualquer cidade e clique em <strong>Buscar</strong>. Os dados de temperatura e umidade aparecem nos gráficos e tabelas abaixo.</p>
+                <h3><i class="fa-solid fa-earth-americas" aria-hidden="true"></i> Adicionar cidade ao sistema</h3>
+                <p>Digite o nome de qualquer cidade do mundo e clique em <strong>Adicionar</strong>. O sistema busca o clima atual e salva tudo automaticamente no banco.</p>
+                <div class="sync-steps">
+                    <span class="sync-step"><i class="fa-solid fa-keyboard" aria-hidden="true"></i> 1. Digite a cidade</span>
+                    <i class="fa-solid fa-arrow-right sync-arrow" aria-hidden="true"></i>
+                    <span class="sync-step"><i class="fa-solid fa-cloud-sun" aria-hidden="true"></i> 2. Buscamos o clima</span>
+                    <i class="fa-solid fa-arrow-right sync-arrow" aria-hidden="true"></i>
+                    <span class="sync-step"><i class="fa-solid fa-chart-line" aria-hidden="true"></i> 3. Dados aparecem nos gráficos</span>
+                </div>
             </div>
             <div class="sync-block">
                 <div class="sync-form">
                     <label for="city-input" class="sr-only">Nome da cidade</label>
-                    <input type="text" id="city-input" placeholder="Ex: São Paulo, Tokyo, New York, Paris..." aria-label="Nome da cidade">
-                    <button id="btn-sync" class="btn-primary" aria-label="Buscar clima da cidade">
-                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Buscar
+                    <input type="text" id="city-input" placeholder="Digite qualquer cidade do mundo..." aria-label="Nome da cidade">
+                    <button id="btn-sync" class="btn-primary" aria-label="Adicionar cidade ao sistema">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i> Adicionar
                     </button>
                 </div>
-                <div class="city-presets" aria-label="Cidades rápidas">
-                    <span class="presets-label">Acesso rápido:</span>
+                <div class="city-presets" aria-label="Sugestões de cidades">
+                    <span class="presets-label">Ou clique numa sugestão:</span>
                     <button class="preset-btn" data-city="Brasília">🇧🇷 Brasília</button>
                     <button class="preset-btn" data-city="São Paulo">🇧🇷 São Paulo</button>
                     <button class="preset-btn" data-city="New York">🇺🇸 New York</button>

@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isBackendOnline) { showToast('Erro: Conecte o Backend Java antes de sincronizar!'); return; }
 
             btnSync.disabled = true;
-            btnSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Buscando...`;
+            btnSync.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Adicionando...`;
             try {
                 const res = await fetch(`${API_URL}/api/clima/sincronizar?cidade=${encodeURIComponent(cidade)}`, { method: 'POST' });
                 if (res.ok) {
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch { showToast('Erro de rede ao sincronizar clima!'); }
             finally {
                 btnSync.disabled = false;
-                btnSync.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Buscar`;
+                btnSync.innerHTML = `<i class="fa-solid fa-plus"></i> Adicionar`;
             }
         });
 

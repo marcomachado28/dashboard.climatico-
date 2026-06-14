@@ -314,6 +314,35 @@ body {
     background: #2563eb;
 }
 
+/* Passos visuais dentro do painel de adicionar cidade */
+.sync-steps {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.sync-step {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.3rem 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.sync-step i { color: var(--accent-blue); }
+
+.sync-arrow {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
 /* Sync panel expandido com presets */
 .sync-panel-expanded {
     flex-direction: column;
