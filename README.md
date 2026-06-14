@@ -82,8 +82,8 @@ CREATE TABLE estacoes_monitoramento (
 CREATE TABLE sensores (
     id_sensor SERIAL PRIMARY KEY,
     id_estacao INT REFERENCES estacoes_monitoramento(id_estacao) ON DELETE CASCADE,
-    tipo_sensor VARCHAR(50) NOT NULL, -- Ex: Temperatura, Umidade, CO2
-    unidade_medida VARCHAR(20) NOT NULL -- Ex: °C, %, ppm
+    tipo_sensor VARCHAR(50) NOT NULL, 
+    unidade_medida VARCHAR(20) NOT NULL 
 );
 
 CREATE TABLE leituras_climaticas (
