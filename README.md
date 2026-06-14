@@ -1,1 +1,79 @@
+# 🌍 Dashboard Climático - Sistema de Monitoramento Ambiental
 
+Este repositório contém o desenvolvimento completo de um **Dashboard Climático**, uma solução Full-Stack projetada para coletar, armazenar, processar e visualizar dados ambientais críticos. O sistema monitora variáveis meteorológicas e analisa o impacto de poluentes industriais em diferentes regiões.
+
+A arquitetura do projeto é dividida em três pilares:
+1. **Banco de Dados (SQL):** Modelagem relacional robusta para histórico de leituras e geolocalização.
+2. **Back-end (Java):** Camada de inteligência responsável pela conexão com o banco (JDBC/JPA), processamento de regras de negócio e API de dados.
+3. **Front-end (Dashboard):** Interface gráfica para visualização de gráficos e insights climáticos em tempo real.
+
+---
+
+## 📌 Sumário
+- [Arquitetura do Sistema](#-arquitetura-do-sistema)
+- [Estrutura do Banco de Dados (SQL)](#-estrutura-do-banco-de-dados-sql)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Configuração do Ambiente](#-configuração-do-ambiente)
+- [Exemplo de Código Java (Camada de Dados)](#-exemplo-de-código-java-camada-de-dados)
+- [Queries e Análises do Dashboard](#-queries-e-análises-do-dashboard)
+- [Como Contribuir](#-como-contribuir)
+
+---
+
+## 📐 Arquitetura do Sistema
+
+O fluxo de dados do ecossistema segue a estrutura:
+`Sensores Ambientais` ➔ `Banco de Dados SQL` ➔ `Aplicação Java (API)` ➔ `Dashboard Visual`
+
+O banco de dados armazena as informações estruturadas em 5 entidades principais: **Regiões**, **Estações de Monitoramento**, **Sensores**, **Leituras Climáticas** (Tabela Factual) e **Fontes de Emissão**.
+
+---
+
+## 🗂️ Estrutura do Banco de Dados (SQL)
+
+O script abaixo cria o esquema relacional necessário para rodar o projeto (compatível com PostgreSQL, MySQL ou Oracle):
+
+```sql
+-- 1. Tabela de Regiões / Localizações Geográficas
+CREATE TABLE regioes (
+    id_regiao SERIAL PRIMARY KEY,
+    nome_regiao VARCHAR(100) NOT NULL,
+    estado_provincia VARCHAR(100),
+    pais VARCHAR(100) NOT NULL,
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6)
+);
+
+-- 2. Tabela de Estações Meteorológicas
+CREATE TABLE estacoes_monitoramento (
+    id_estacao SERIAL PRIMARY KEY,
+    nome_estacao VARCHAR(100) NOT NULL,
+    id_regiao INT REFERENCES regioes(id_regiao) ON DELETE CASCADE,
+    data_instalacao DATE,
+    status_operacional VARCHAR(20) DEFAULT 'Ativa'
+);
+
+-- 3. Tabela de Sensores por Estação
+CREATE TABLE sensores (
+    id_sensor SERIAL PRIMARY KEY,
+    id_estacao INT REFERENCES estacoes_monitoramento(id_estacao) ON DELETE CASCADE,
+    tipo_sensor VARCHAR(50) NOT NULL, -- Ex: Temperatura, Umidade, CO2
+    unidade_medida VARCHAR(20) NOT NULL -- Ex: °C, %, ppm
+);
+
+-- 4. Tabela Factual: Leituras Climáticas Históricas
+CREATE TABLE leituras_climaticas (
+    id_leitura BIGSERIAL PRIMARY KEY,
+    id_sensor INT REFERENCES sensores(id_sensor) ON DELETE CASCADE,
+    data_hora_leitura TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    valor_medido DECIMAL(10,2) NOT NULL
+);
+
+-- 5. Tabela de Fontes de Emissão (Poluição Regional)
+CREATE TABLE fontes_emissao (
+    id_fonte SERIAL PRIMARY KEY,
+    id_regiao INT REFERENCES regioes(id_regiao) ON DELETE SET NULL,
+    nome_empresa_local VARCHAR(150),
+    tipo_poluente VARCHAR(50),
+    emissao_anual_estimada DECIMAL(12,2) -- Em Toneladas
+);
