@@ -29,6 +29,33 @@ O banco de dados armazena as informações estruturadas em 5 entidades principai
 
 ---
 
+## 🛠️ Tecnologias Utilizadas
+Linguagem Principal: Java 17+
+
+Framework Back-end: Spring Boot (Spring Data JPA / Spring Web)
+
+Banco de Dados: PostgreSQL / MySQL
+
+Gerenciador de Dependências: Maven / Gradle
+
+Interface do Dashboard: (Ex: React.js, Thymeleaf ou ferramentas de BI como PowerBI/Metabase conectados à API Java)
+
+## 🚀 Configuração do Ambiente
+Pré-requisitos
+Java JDK 17 ou superior instalado.
+
+SGBD (PostgreSQL ou MySQL) ativo.
+
+IDE de sua preferência (IntelliJ IDEA, Eclipse ou VS Code).
+
+## Configurando o Banco de Dados
+Crie um banco de dados chamado projeto_climatico e execute o script contido na seção Estrutura do Banco de Dados.
+
+## Configurando a Aplicação Java
+No arquivo src/main/resources/application.properties do seu projeto Spring Boot, ajuste as credenciais de acesso ao banco:
+
+--
+
 ## 🗂️ Estrutura do Banco de Dados (SQL)
 
 O script abaixo cria o esquema relacional necessário para rodar o projeto (compatível com PostgreSQL, MySQL ou Oracle):
@@ -78,27 +105,4 @@ CREATE TABLE fontes_emissao (
     emissao_anual_estimada DECIMAL(12,2) -- Em Toneladas
 );
 
-🛠️ Tecnologias Utilizadas
-Linguagem Principal: Java 17+
 
-Framework Back-end: Spring Boot (Spring Data JPA / Spring Web)
-
-Banco de Dados: PostgreSQL / MySQL
-
-Gerenciador de Dependências: Maven / Gradle
-
-Interface do Dashboard: (Ex: React.js, Thymeleaf ou ferramentas de BI como PowerBI/Metabase conectados à API Java)
-
-🚀 Configuração do Ambiente
-1. Pré-requisitos
-Java JDK 17 ou superior instalado.
-
-SGBD (PostgreSQL ou MySQL) ativo.
-
-IDE de sua preferência (IntelliJ IDEA, Eclipse ou VS Code).
-
-2. Configurando o Banco de Dados
-Crie um banco de dados chamado projeto_climatico e execute o script contido na seção Estrutura do Banco de Dados.
-
-3. Configurando a Aplicação Java
-No arquivo src/main/resources/application.properties do seu projeto Spring Boot, ajuste as credenciais de acesso ao banco:
