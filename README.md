@@ -1,5 +1,5 @@
 # 🌍 Dashboard Climático - Monitoramento Ambiental & Emissões
-**Autor:** Marco Túlio de Sousa Machado  
+**Autores:** Marco Túlio de Sousa Machado & Lucas Cortez Leoi  
 **Instituição:** Bootcamp II — Entrega Final (Etapa 3)
 
 ---
