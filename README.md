@@ -54,11 +54,12 @@ Crie um banco de dados chamado projeto_climatico e execute o script contido na s
 ## Configurando a Aplicação Java
 No arquivo src/main/resources/application.properties do seu projeto Spring Boot, ajuste as credenciais de acesso ao banco:
 
---
+## 🛠️ Configuração do Banco de Dados na Nuvem (Neon)
 
-## 🗂️ Estrutura do Banco de Dados (SQL)
+Este projeto utiliza o **PostgreSQL** hospedado na nuvem através do **Neon** para rodar os testes de integração automatizados no GitHub Actions.
 
-O script abaixo cria o esquema relacional necessário para rodar o projeto (compatível com PostgreSQL, MySQL ou Oracle):
+## 📁 Estrutura do Banco de Dados
+Para recriar a estrutura correta do banco, execute o script SQL abaixo dentro do **SQL Editor** no painel do Neon:
 
 ```sql
 
