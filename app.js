@@ -2,7 +2,11 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE MANAGEMENT ---
-    let API_URL = localStorage.getItem('backend_api_url') || 'https://dashboard-climatico-b0zc.onrender.com';
+    let API_URL = localStorage.getItem('backend_api_url');
+    if (!API_URL || API_URL.includes('localhost') || API_URL.includes('127.0.0.1')) {
+        API_URL = 'https://dashboard-climatico-b0zc.onrender.com';
+        localStorage.setItem('backend_api_url', API_URL);
+    }
     let isBackendOnline = false;
     let dataState = {
         regioes: [],
