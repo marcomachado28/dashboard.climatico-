@@ -109,7 +109,21 @@ CREATE TABLE fontes_emissao (
 
 ---
 
-## 🚀 5. O papel da Vercel (Hospedagem Front-end)
+## ⏱️ 5. Conexão em Tempo Real do Clima Mundial (ClimaScheduler)
+
+Para manter o dashboard com informações dinâmicas de várias partes do mundo de forma totalmente automática e sem custos, implementamos um serviço agendado no back-end Java:
+
+1.  **Habilitação do Agendamento:** Adicionamos a anotação `@EnableScheduling` na classe bootstrap `Main.java` para ativar o motor de agendamento de tarefas em segundo plano do Spring Boot.
+2.  **Lógica do Scheduler (`ClimaScheduler.java`):** Criamos um componente gerenciado pelo Spring que possui o método `sincronizarCidadesMundiais()`.
+3.  **Execução Periódica:** Usando a anotação `@Scheduled(fixedRate = 600000, initialDelay = 10000)`, o método roda automaticamente a cada **10 minutos** (com um atraso inicial de 10 segundos ao subir o servidor).
+4.  **Varredura Global:** O método itera sobre uma lista pré-definida de capitais e grandes metrópoles mundiais:
+    *   *Brasília, São Paulo, Nova York, Londres, Tóquio, Paris, Sydney, Cairo e Lisboa*.
+5.  **Conectividade Externa:** Para cada cidade, o scheduler invoca internamente o método do `ClimaController`, que faz a requisição REST para a OpenWeather API, traduz o JSON em objetos Java, valida/cria a Região e a Estação de Monitoramento, e grava na tabela factual as leituras climáticas em tempo real.
+6.  **Polidez e Respeito aos Limites:** Incluímos um atraso de 1.5 segundos (`Thread.sleep(1500)`) entre as requisições de cada cidade para evitar sobrecarregar o limite da chave gratuita da OpenWeather (limite de 60 requisições por minuto).
+
+---
+
+## 🚀 6. O papel da Vercel (Hospedagem Front-end)
 
 A **Vercel** é uma plataforma focada em hospedar aplicações front-end e páginas estáticas de alta performance de forma simples.
 *   **Integração Contínua (Git-Trigger):** A Vercel está diretamente atrelada ao seu repositório GitHub. Toda vez que enviamos código (`git push`), a Vercel detecta a mudança e recompila a página instantaneamente.
@@ -119,7 +133,7 @@ A **Vercel** é uma plataforma focada em hospedar aplicações front-end e pági
 
 ---
 
-## ⚡ 6. Como Executar e Configurar o Projeto Localmente
+## ⚡ 7. Como Executar e Configurar o Projeto Localmente
 
 ### Pré-requisitos
 *   Java JDK 21 instalado no seu sistema.
@@ -140,7 +154,7 @@ A **Vercel** é uma plataforma focada em hospedar aplicações front-end e pági
 
 ---
 
-## 🧪 7. Testes Automatizados (CI)
+## 🧪 8. Testes Automatizados (CI)
 
 A esteira de integração contínua (GitHub Actions) está configurada para compilar a aplicação e rodar os testes a cada commit ou Pull Request. Os testes foram implementados com **MockMvc** e banco de dados **H2 em memória**, garantindo estabilidade e velocidade.
 
@@ -151,7 +165,7 @@ mvn clean test
 
 ---
 
-## 🎓 8. Aprendizados e Reflexões Acadêmicas obtidos nesta Lição
+## 🎓 9. Aprendizados e Reflexões Acadêmicas obtidos nesta Lição
 
 O desenvolvimento desta entrega final proporcionou aprendizados práticos cruciais para a formação de um engenheiro de software:
 
@@ -161,3 +175,4 @@ O desenvolvimento desta entrega final proporcionou aprendizados práticos crucia
 4.  **Desenvolvimento Full-Stack Integrado:** A coordenação entre chamadas REST assíncronas do front-end com os controladores Spring Boot e a integração com APIs externas solidificou o entendimento sobre arquiteturas web modernas e o tratamento correto de requisições Cross-Origin (CORS).
 5.  **A Estética da Simplicidade no Design:** A experiência prática de design de interfaces ensinou que dashboards corporativos e acadêmicos exigem layout plano, limpo e com foco absoluto na informação útil. Cores sólidas bem contrastadas e componentes retangulares planos comunicam profissionalismo e otimizam a legibilidade para os tomadores de decisão.
 6.  **Resolução de Dependências em Contêineres (Docker no Deploy):** A correção do `Dockerfile` de `maven:3.8.5-openjdk-21` para `maven:3.9.6-eclipse-temurin-21` nos ensinou que ambientes de deploy contínuo na nuvem (como o Render) são estritamente dependentes de tags oficiais e ativas nos registros públicos (como o Docker Hub). Compreender a compatibilidade de JDKs e o ciclo de suporte (LTS) de imagens base é vital para evitar falhas silenciosas de deploy em ambientes reais de produção.
+7.  **Uso Colaborativo e Ético de Ferramentas de IA:** O processo de aceleração do desenvolvimento e correção de erros contou com o auxílio de assistentes de inteligência artificial (Gemini, Claude, Copilot e ChatGPT). A utilização das ferramentas funcionou de forma ética como suporte de co-pilotagem de código e depuração rápida de falhas. Contudo, a lógica estrutural, a modelagem de tabelas relacionais, o comportamento da esteira de CI/CD e as decisões arquiteturais foram de fato assimilados de maneira concreta por mim e Lucas, garantindo que o projeto atenda plenamente às regras solicitadas pelo professor.

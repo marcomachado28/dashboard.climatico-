@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectSensEstacao = document.getElementById('sens-estacao');
     const selectEmRegiao = document.getElementById('em-regiao');
     const selectLeitSensor = document.getElementById('leit-sensor');
+    const selectDashboardFilter = document.getElementById('dashboard-region-filter');
 
     // Set Initial Input Value
     backendUrlInput.value = API_URL;
@@ -167,32 +168,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateMetrics() {
+        const filterVal = selectDashboardFilter.value || 'all';
+        
+        let readings = [...dataState.leituras];
+        let emissions = [...dataState.emissoes];
+        let stations = [...dataState.estacoes];
+        
+        if (filterVal !== 'all') {
+            const regId = Number(filterVal);
+            stations = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            const stationIds = stations.map(e => e.idEstacao);
+            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+            emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
+        }
+
         // Temp Average
-        const tempReadings = dataState.leituras.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'temperatura');
+        const tempReadings = readings.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'temperatura');
         const tempSum = tempReadings.reduce((sum, r) => sum + Number(r.valorMedido), 0);
         const tempAvg = tempReadings.length > 0 ? (tempSum / tempReadings.length).toFixed(1) : '--';
         document.getElementById('val-temp-avg').textContent = tempAvg !== '--' ? `${tempAvg}°C` : '--°C';
-        document.getElementById('val-temp-count').textContent = `${tempReadings.length} medições registradas`;
+        document.getElementById('val-temp-count').textContent = `${tempReadings.length} medições`;
 
         // Humidity Average
-        const humidityReadings = dataState.leituras.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'umidade');
+        const humidityReadings = readings.filter(l => l.sensor && l.sensor.tipoSensor.toLowerCase() === 'umidade');
         const humiditySum = humidityReadings.reduce((sum, r) => sum + Number(r.valorMedido), 0);
         const humidityAvg = humidityReadings.length > 0 ? (humiditySum / humidityReadings.length).toFixed(0) : '--';
         document.getElementById('val-humidity-avg').textContent = humidityAvg !== '--' ? `${humidityAvg}%` : '--%';
-        document.getElementById('val-humidity-count').textContent = `${humidityReadings.length} medições registradas`;
+        document.getElementById('val-humidity-count').textContent = `${humidityReadings.length} medições`;
 
         // Stations Count
-        document.getElementById('val-stations-count').textContent = dataState.estacoes.length;
+        document.getElementById('val-stations-count').textContent = stations.length;
         document.getElementById('val-regions-count').textContent = `${dataState.regioes.length} Regiões cadastradas`;
 
         // Emissions Total
-        const totalEmissions = dataState.emissoes.reduce((sum, e) => sum + Number(e.emissaoAnualEstimada), 0);
+        const totalEmissions = emissions.reduce((sum, e) => sum + Number(e.emissaoAnualEstimada), 0);
         document.getElementById('val-emissions-total').textContent = `${totalEmissions.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} t`;
-        document.getElementById('val-sources-count').textContent = `${dataState.emissoes.length} Fontes industriais`;
+        document.getElementById('val-sources-count').textContent = `${emissions.length} Fontes industriais`;
     }
 
     function populateTables() {
-        // Regiões Table
+        const filterVal = selectDashboardFilter.value || 'all';
+        
+        let readings = [...dataState.leituras];
+        let emissions = [...dataState.emissoes];
+        let stations = [...dataState.estacoes];
+        
+        if (filterVal !== 'all') {
+            const regId = Number(filterVal);
+            stations = stations.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            const stationIds = stations.map(e => e.idEstacao);
+            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+            emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
+        }
+
+        // Regiões Table (not filtered)
         tableRegioes.innerHTML = dataState.regioes.map(r => `
             <tr>
                 <td>${r.idRegiao}</td>
@@ -204,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma região cadastrada</td></tr>';
 
         // Estações Table
-        tableEstacoes.innerHTML = dataState.estacoes.map(e => `
+        tableEstacoes.innerHTML = stations.map(e => `
             <tr>
                 <td>${e.idEstacao}</td>
                 <td><strong>${e.nomeEstacao}</strong></td>
@@ -212,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${e.dataInstalacao ? new Date(e.dataInstalacao).toLocaleDateString('pt-BR') : '--'}</td>
                 <td><span class="badge ${getBadgeClass(e.statusOperacional)}">${e.statusOperacional}</span></td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma estação cadastrada</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma estação correspondente</td></tr>';
 
         // Sensores Table
         tableSensores.innerHTML = dataState.sensores.map(s => `
@@ -225,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('') || '<tr><td colspan="4" style="text-align:center;">Nenhum sensor cadastrado</td></tr>';
 
         // Emissões Table
-        tableEmissoes.innerHTML = dataState.emissoes.map(e => `
+        tableEmissoes.innerHTML = emissions.map(e => `
             <tr>
                 <td>${e.idFonte}</td>
                 <td><strong>${e.nomeEmpresaLocal}</strong></td>
@@ -233,10 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${e.tipoPoluente}</td>
                 <td>${Number(e.emissaoAnualEstimada).toLocaleString('pt-BR')} t</td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma fonte de emissão cadastrada</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma fonte de emissão correspondente</td></tr>';
 
         // Leituras Table
-        tableLeituras.innerHTML = dataState.leituras.map(l => `
+        tableLeituras.innerHTML = readings.map(l => `
             <tr>
                 <td>#${l.idLeitura}</td>
                 <td>${l.sensor && l.sensor.estacao ? l.sensor.estacao.nomeEstacao : '--'} ➔ <strong>${l.sensor ? l.sensor.tipoSensor : '--'}</strong></td>
@@ -246,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>${formatDateTime(l.dataHoraLeitura)}</td>
             </tr>
-        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma leitura climatológica registrada</td></tr>';
+        `).join('') || '<tr><td colspan="5" style="text-align:center;">Nenhuma leitura correspondente</td></tr>';
     }
 
     function getBadgeClass(status) {
@@ -271,6 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
         selectEstRegiao.innerHTML = regOptions;
         selectEmRegiao.innerHTML = regOptions;
 
+        // Filtro Global de Região
+        const selectedFilterVal = selectDashboardFilter.value || 'all';
+        selectDashboardFilter.innerHTML = `<option value="all">Todas as Regiões (Geral)</option>` + dataState.regioes.map(r => `<option value="${r.idRegiao}">${r.nomeRegiao}</option>`).join('');
+        selectDashboardFilter.value = selectedFilterVal;
+
         // Sensores Estações
         const estOptions = `<option value="">Selecione...</option>` + dataState.estacoes.map(e => `<option value="${e.idEstacao}">${e.nomeEstacao}</option>`).join('');
         selectSensEstacao.innerHTML = estOptions;
@@ -285,6 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FORM ACTIONS ---
     function setupEventListeners() {
+        // Filtro de Região do Dashboard
+        selectDashboardFilter.addEventListener('change', () => {
+            calculateMetrics();
+            populateTables();
+            renderClimaticChart();
+            renderEmissionsChart();
+        });
+
         // OpenWeather Synchronizer
         btnSync.addEventListener('click', async () => {
             const cidade = cityInput.value.trim();
@@ -433,8 +475,17 @@ document.addEventListener('DOMContentLoaded', () => {
             climaticChart.destroy();
         }
 
+        const filterVal = selectDashboardFilter.value || 'all';
+        let readings = [...dataState.leituras];
+        if (filterVal !== 'all') {
+            const regId = Number(filterVal);
+            const stations = dataState.estacoes.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            const stationIds = stations.map(e => e.idEstacao);
+            readings = readings.filter(l => l.sensor && l.sensor.estacao && stationIds.includes(l.sensor.estacao.idEstacao));
+        }
+
         // Filter readings and sort chronologically (oldest to newest)
-        const readingsSorted = [...dataState.leituras]
+        const readingsSorted = readings
             .filter(l => l.dataHoraLeitura)
             .sort((a, b) => new Date(a.dataHoraLeitura) - new Date(b.dataHoraLeitura));
 
@@ -518,22 +569,35 @@ document.addEventListener('DOMContentLoaded', () => {
             emissionsChart.destroy();
         }
 
-        // Group emissions by region
-        const regionsMap = {};
-        dataState.emissoes.forEach(e => {
-            const regName = e.regiao ? e.regiao.nomeRegiao : 'Outros';
-            regionsMap[regName] = (regionsMap[regName] || 0) + Number(e.emissaoAnualEstimada);
-        });
+        const filterVal = selectDashboardFilter.value || 'all';
+        let emissions = [...dataState.emissoes];
+        const emissionsMap = {};
+        let labelName = 'Emissões Totais por Região';
 
-        const labels = Object.keys(regionsMap);
-        const data = Object.values(regionsMap);
+        if (filterVal !== 'all') {
+            const regId = Number(filterVal);
+            emissions = emissions.filter(e => e.regiao && e.regiao.idRegiao === regId);
+            emissions.forEach(e => {
+                const sourceName = e.nomeEmpresaLocal || 'Desconhecido';
+                emissionsMap[sourceName] = (emissionsMap[sourceName] || 0) + Number(e.emissaoAnualEstimada);
+            });
+            labelName = 'Emissões Industriais da Região (t)';
+        } else {
+            emissions.forEach(e => {
+                const regName = e.regiao ? e.regiao.nomeRegiao : 'Outros';
+                emissionsMap[regName] = (emissionsMap[regName] || 0) + Number(e.emissaoAnualEstimada);
+            });
+        }
+
+        const labels = Object.keys(emissionsMap);
+        const data = Object.values(emissionsMap);
 
         emissionsChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Emissões Totais (Toneladas Anuais)',
+                    label: labelName,
                     data: data,
                     backgroundColor: 'rgba(16, 185, 129, 0.45)',
                     borderColor: '#10b981',
