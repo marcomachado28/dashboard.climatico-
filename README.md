@@ -54,6 +54,7 @@ Crie um banco de dados chamado projeto_climatico e execute o script contido na s
 ## Configurando a Aplicação Java
 No arquivo src/main/resources/application.properties do seu projeto Spring Boot, ajuste as credenciais de acesso ao banco:
 
+
 ## 🛠️ Configuração do Banco de Dados na Nuvem (Neon)
 
 Este projeto utiliza o **PostgreSQL** hospedado na nuvem através do **Neon** para rodar os testes de integração automatizados no GitHub Actions.
@@ -102,4 +103,23 @@ CREATE TABLE fontes_emissao (
     emissao_anual_estimada DECIMAL(12,2) -- Em Toneladas
 );
 
+```
+
+## 🚀 Passos Finais: Conexão Java e Ativação do CI/CD
+
+Com o banco de dados criado e os segredos salvos no GitHub, siga estes passos para conectar o projeto e rodar a esteira de testes automáticos.
+
+### 1. Configuração do Ambiente Java (`application.properties`)
+Certifique-se de que o arquivo `src/main/resources/application.properties` (ou o equivalente na pasta `src/test/resources/`) esteja configurado para ler dinamicamente as variáveis que o GitHub Actions injetará em memória:
+
+```properties
+# Conexão dinâmica com o PostgreSQL (Neon)
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USER}
+spring.datasource.password=${DB_PASSWORD}
+
+# Driver e Dialeto do Banco
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=validate
 
