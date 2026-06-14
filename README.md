@@ -1,4 +1,4 @@
-# 🌍 Dashboard Climático & Monitoramento de Emissões
+# 🌍 Dashboard Climático - Monitoramento Ambiental & Emissões
 **Autor:** Marco Túlio de Sousa Machado  
 **Instituição:** Bootcamp II — Entrega Final (Etapa 3)
 
@@ -12,24 +12,49 @@ A solução proposta coleta dados meteorológicos em tempo real por meio da **Op
 
 ---
 
-## 📐 2. Arquitetura da Solução
+## 🛠️ 2. A Stack de Tecnologia (Linguagens e Frameworks)
 
-O fluxo e processamento de dados do sistema foram estruturados com base em três pilares fundamentais:
+O projeto é uma aplicação **Full-Stack** (composta por Front-end e Back-end) e adota as seguintes tecnologias:
 
-```
-[ Usuário ] ➔ [ Dashboard (Vercel) ] ➔ [ API REST (Spring Boot) ] ➔ [ PostgreSQL (Neon) ]
-                                                       │
-                                                       └──➔ [ OpenWeather API ]
-```
+### **Back-end (Servidor)**
+*   **Java 21 (LTS):** A linguagem principal de programação no back-end. A versão 21 garante recursos modernos de concorrência e desempenho.
+*   **Spring Boot 3.2.4:** Um framework Java que agiliza o desenvolvimento web. Ele nos fornece o servidor web embutido (Tomcat), a infraestrutura para criar APIs REST e a integração com o banco de dados.
+*   **Spring Data JPA / Hibernate:** Uma camada que faz a tradução automática entre as tabelas SQL do banco de dados e os objetos Java (Classes). Graças a ele, não precisamos digitar códigos SQL manuais para inserir, atualizar ou ler registros.
+*   **Gson (da Google):** Biblioteca Java usada para converter texto JSON (recebido da OpenWeather API) em objetos legíveis pelo Java.
+*   **H2 Database (em memória):** Um banco de dados super leve que roda na memória RAM do computador durante a execução dos testes automatizados (`mvn test`). Ele garante que os testes passem no GitHub Actions sem precisar se conectar a um banco real na nuvem.
 
-1.  **Back-end (Java 21 & Spring Boot):** Camada de negócio e API REST. Responsável pelas requisições HTTP para a API externa, regras de validação, mapeamento objeto-relacional (JPA) e persistência de dados.
-2.  **Banco de Dados (Neon.tech PostgreSQL):** Base de dados relacional hospedada na nuvem que armazena a estrutura factual e as tabelas dimensionais de forma íntegra.
-3.  **Front-end (Vercel):** Interface do dashboard simples, limpa e funcional, adaptada de padrões corporativos clássicos, com gráficos de séries temporais e barras usando **Chart.js** e formulários dinâmicos de gerenciamento.
+### **Front-end (Interface Visual)**
+*   **HTML5 & CSS3:** Definem a estrutura semântica da página e a estilização visual. O CSS foi totalmente baseado em **cores sólidas e design plano (Flat Design)**, inspirado na imagem de referência corporativa (evitando excesso de degradês ou efeitos flutuantes para garantir um tom sério e acadêmico).
+*   **JavaScript (ES6):** Manipula o navegador do usuário, captura os cliques nos botões, envia requisições assíncronas para o servidor Java (via `fetch`) e atualiza o visual da tela em tempo real sem precisar atualizar a página.
+*   **Chart.js:** Uma biblioteca JavaScript para renderização de gráficos. Ela gera os gráficos de linha (histórico de leituras) e de barra (emissão de CO₂ por região) no painel.
 
 ---
 
-## 💾 3. Modelagem Relacional do Banco de Dados
+## 🔗 3. Como Tudo se Conecta (O Fluxo de Dados)
 
+Tudo funciona de forma integrada por meio de requisições HTTP e do padrão REST. Veja o caminho de uma requisição de ponta a ponta:
+
+1.  **O Usuário digita "Brasília"** no dashboard no navegador e clica em **Sincronizar**.
+2.  **O JavaScript (Front-end)** faz uma chamada de rede em segundo plano para o servidor Java rodando localmente (ou na nuvem):
+    ```
+    POST http://localhost:8080/api/clima/sincronizar?cidade=Brasília
+    ```
+3.  **O Back-end (Spring Boot)** recebe a requisição através do `ClimaController` e a redireciona para o `ClimaServico`.
+4.  **Integração Externa:** O Java faz uma chamada de API externa para a **OpenWeather API**, pedindo os dados climáticos em tempo real de Brasília.
+5.  **A OpenWeather** responde ao Java com um JSON estruturado contendo a temperatura atual, umidade e a descrição do clima.
+6.  **Persistência (Neon PostgreSQL):** O Java analisa esse JSON e realiza as seguintes operações no banco de dados na nuvem (Neon) usando JPA:
+    *   Verifica se a região "Brasília" já existe no banco. Se não existir, cria a linha na tabela `regioes`.
+    *   Verifica se já existe uma estação de monitoramento padrão para Brasília. Se não, cria na tabela `estacoes_monitoramento`.
+    *   Garante que os sensores de "Temperatura" e "Umidade" estão cadastrados na tabela `sensores`.
+    *   Insere a leitura de temperatura atual (Ex: `22.5°C`) e a leitura de umidade (Ex: `60%`) na tabela factual `leituras_climaticas`, gravando também o dia e hora exatos.
+7.  **Resposta:** O Java retorna os dados meteorológicos de volta para o navegador em formato JSON.
+8.  **Renderização:** O JavaScript no navegador recebe o JSON, atualiza os cards de métricas na tela e recarrega os gráficos do **Chart.js**, plotando as novas leituras instantaneamente!
+
+---
+
+## 💾 4. Modelagem Relacional do Banco de Dados (Neon.tech)
+
+O **Neon** é um serviço moderno de banco de dados serverless hospedado na nuvem que roda o motor **PostgreSQL**.
 O banco de dados foi modelado para suportar o rastreamento histórico de leituras ambientais vinculadas a sensores em estações geolocalizadas. O script SQL a seguir foi executado no console da Neon:
 
 ```sql
@@ -80,20 +105,23 @@ CREATE TABLE fontes_emissao (
 
 ---
 
-## 🛠️ 4. Detalhes de Implementação
+## 🚀 5. O papel da Vercel (Hospedagem Front-end)
 
-Durante o desenvolvimento, liderei as seguintes correções e implementações no repositório:
-*   **Organização e Correção de Arquivos:** Movi os arquivos soltos na raiz para a arquitetura de pacotes Maven correta (`com.clima`), eliminando o arquivo malformado `projeto clima.java` e corrigindo a declaração do compilador Java no `pom.xml`.
-*   **Modelagem de Entidades com JPA:** Criei os mapeamentos declarativos (`@Entity`) e integrei as interfaces do `JpaRepository` para gerenciar as operações de banco sem escrita de SQL manual desnecessária.
-*   **Mecanismo de Sincronização Dinâmica:** Desenvolvi um endpoint `/api/clima/sincronizar` que conecta a OpenWeather API ao Neon DB. Ao receber o nome de uma cidade, o Java a insere como Região, gera uma Estação padrão, instala sensores de Temperatura e Umidade e grava as leituras factuais correspondentes.
-*   **Design Simples e Funcional:** Desenvolvi um design dark minimalista e responsivo que evita exageros estéticos e foca no contraste e na legibilidade dos dados (tabelas e gráficos clássicos em tons de azul, verde e cinza).
-*   **Garantia de Qualidade com Banco H2:** Para evitar que o CI (GitHub Actions) falhasse por falta de credenciais do banco em nuvem, criei configurações locais de teste (`src/test/resources/application.properties`) usando banco em memória H2.
+A **Vercel** é uma plataforma focada em hospedar aplicações front-end e páginas estáticas de alta performance de forma simples.
+*   **Integração Contínua (Git-Trigger):** A Vercel está diretamente atrelada ao seu repositório GitHub. Toda vez que enviamos código (`git push`), a Vercel detecta a mudança e recompila a página instantaneamente.
+*   **Hospedagem Estática:** A Vercel serve os arquivos `index.html`, `style.css` e `app.js` globalmente para qualquer usuário que acessar a URL do seu site.
+*   **A Engrenagem de Conexão:** Como a Vercel hospeda apenas a interface gráfica e o Java (servidor) roda em outro ambiente, criamos um painel de configuração dinâmico no topo do site (o botão de engrenagem <i class="fa-solid fa-gear"></i>). 
+    *   Você pode digitar o endereço do seu backend Java rodando localmente (`http://localhost:8080`) ou colar o link de produção do seu backend hospedado no Railway/Render. O JavaScript grava essa informação no `localStorage` do navegador para que o site saiba para onde enviar as requisições.
 
 ---
 
-## ⚡ 5. Como Executar e Configurar o Projeto
+## ⚡ 6. Como Executar e Configurar o Projeto Localmente
 
-### Rodando o Back-end
+### Pré-requisitos
+*   Java JDK 21 instalado no seu sistema.
+*   IDE recomendada: VS Code ou IntelliJ IDEA.
+
+### Executando o Back-end
 1.  Verifique se o arquivo `application.properties` está atualizado com as credenciais do seu Neon DB ou envie-as via variáveis de ambiente.
 2.  Importe o projeto como um projeto Maven na sua IDE de preferência.
 3.  Execute a classe `Main.java` clicando no botão **Run** ou execute o comando Maven no terminal:
@@ -101,14 +129,25 @@ Durante o desenvolvimento, liderei as seguintes correções e implementações n
     mvn spring-boot:run
     ```
 
-### Rodando o Front-end
-1.  Abra o arquivo `index.html` diretamente no seu navegador.
-2.  Certifique-se de que a URL de conexão no painel de engrenagem está apontada para a porta do seu servidor Java local (`http://localhost:8080`).
-3.  Utilize o campo de texto para buscar cidades e adicionar registros.
+### Executando o Front-end
+1.  Como o frontend é uma página estática interativa que consome a API REST, basta abrir o arquivo `index.html` diretamente no seu navegador ou utilizar a extensão **Live Server** (VS Code).
+2.  No painel superior direito do dashboard, clique no ícone de engrenagem (<i class="fa-solid fa-gear"></i>) e certifique-se de que a URL está definida para `http://localhost:8080`.
+3.  Digite o nome de uma cidade (Ex: Brasília) no campo de busca e clique em **Sincronizar**.
 
 ---
 
-## 🎓 6. Aprendizados Obtidos nesta Lição
+## 🧪 7. Testes Automatizados (CI)
+
+A esteira de integração contínua (GitHub Actions) está configurada para compilar a aplicação e rodar os testes a cada commit ou Pull Request. Os testes foram implementados com **MockMvc** e banco de dados **H2 em memória**, garantindo estabilidade e velocidade.
+
+Para rodar os testes localmente:
+```bash
+mvn clean test
+```
+
+---
+
+## 🎓 8. Aprendizados e Reflexões Acadêmicas obtidos nesta Lição
 
 O desenvolvimento desta entrega final proporcionou aprendizados práticos cruciais para a formação de um engenheiro de software:
 
