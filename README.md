@@ -1,49 +1,39 @@
-# 🌍 Dashboard Climático - Monitoramento Ambiental & Emissões
-
-Esta é a entrega final da **Etapa 3 (Trabalho em Equipe, Banco de Dados e Code Review)** do Bootcamp II. O projeto foi reestruturado de uma aplicação de console simples para uma solução Full-Stack robusta, contendo um Back-end Java (Spring Boot) persistido no Neon PostgreSQL e um Front-end moderno (HTML/CSS/JS) com gráficos interativos e responsivos hospedado na Vercel.
-
----
-
-## 👥 1. Integrantes do Grupo
-*   **Marco Túlio Machado** (GitHub: [@marcomachado28](https://github.com/marcomachado28))
-*   *[Adicione aqui o nome e a matrícula dos outros integrantes de sua equipe]*
+# 🌍 Dashboard Climático & Monitoramento de Emissões
+**Autor:** Marco Túlio de Sousa Machado  
+**Instituição:** Bootcamp II — Entrega Final (Etapa 3)
 
 ---
 
-## 🏗️ 2. Arquitetura da Solução
+## 📌 1. Visão Geral do Projeto
 
-O ecossistema é composto por três pilares integrados de ponta a ponta:
+Este repositório contém a entrega final da Etapa 3 do Bootcamp. O projeto evoluiu de uma aplicação de console simples em Java para um sistema completo e integrado de monitoramento ambiental e controle de emissões industriais de ponta a ponta. 
+
+A solução proposta coleta dados meteorológicos em tempo real por meio da **OpenWeather API**, processa esses dados através de um ecossistema construído em **Java com Spring Boot**, persiste e relaciona as informações em um banco de dados relacional em nuvem (**Neon PostgreSQL**) e disponibiliza painéis de análise visual interativos em um front-end otimizado hospedado na **Vercel**.
+
+---
+
+## 📐 2. Arquitetura da Solução
+
+O fluxo e processamento de dados do sistema foram estruturados com base em três pilares fundamentais:
 
 ```
-[ Usuário ] ➔ [ Dashboard Front-end (Vercel) ] ➔ [ API REST (Java / Spring Boot) ] ➔ [ PostgreSQL (Neon) ]
-                                                                 │
-                                                                 └──➔ [ OpenWeather API ]
+[ Usuário ] ➔ [ Dashboard (Vercel) ] ➔ [ API REST (Spring Boot) ] ➔ [ PostgreSQL (Neon) ]
+                                                       │
+                                                       └──➔ [ OpenWeather API ]
 ```
 
-1.  **Banco de Dados Relacional (Neon.tech):** Instância PostgreSQL na nuvem que gerencia os dados estruturados do sistema, permitindo persistência física e integridade dos dados (tabelas factuais e dimensões).
-2.  **Back-end Java (Spring Boot / JPA):** Camada de inteligência exposta por meio de APIs REST. Ela executa operações de CRUD no banco, realiza o processamento lógico das regras de negócio, integra-se à OpenWeather API e habilita CORS para comunicações de domínios externos.
-3.  **Front-end Dashboard (Vercel):** Interface web estática interativa, desenvolvida em Vanilla CSS (com estética glassmorphism premium e micro-animações) e Vanilla JavaScript, que renderiza gráficos dinâmicos usando Chart.js e se conecta dinamicamente ao Back-end.
+1.  **Back-end (Java 21 & Spring Boot):** Camada de negócio e API REST. Responsável pelas requisições HTTP para a API externa, regras de validação, mapeamento objeto-relacional (JPA) e persistência de dados.
+2.  **Banco de Dados (Neon.tech PostgreSQL):** Base de dados relacional hospedada na nuvem que armazena a estrutura factual e as tabelas dimensionais de forma íntegra.
+3.  **Front-end (Vercel):** Interface do dashboard simples, limpa e funcional, adaptada de padrões corporativos clássicos, com gráficos de séries temporais e barras usando **Chart.js** e formulários dinâmicos de gerenciamento.
 
 ---
 
-## 🛠️ 3. Tecnologias Utilizadas
-*   **Linguagem:** Java 21 (LTS)
-*   **Framework:** Spring Boot 3.2.4 (com Spring Data JPA, Hibernate e Spring Web)
-*   **Driver do Banco:** PostgreSQL Driver
-*   **Banco de Testes:** H2 Database (in-memory) para que o CI sempre rode "verde" sem depender de internet/banco externo
-*   **Parser de JSON:** Gson
-*   **Gerenciador de Dependências:** Maven
-*   **Interface Web (Dashboard):** HTML5, CSS3, JavaScript (ES6+), FontAwesome 6, Chart.js 4 (via CDN)
-*   **Infraestrutura e CI/CD:** GitHub Actions (CI) e Vercel (CD para o frontend)
+## 💾 3. Modelagem Relacional do Banco de Dados
 
----
-
-## 📂 4. Estrutura do Banco de Dados (SQL)
-
-Para recriar a estrutura no painel do **Neon PostgreSQL**, execute o script abaixo no editor de queries SQL:
+O banco de dados foi modelado para suportar o rastreamento histórico de leituras ambientais vinculadas a sensores em estações geolocalizadas. O script SQL a seguir foi executado no console da Neon:
 
 ```sql
--- Dimensão 1: Regiões
+-- Dimensão 1: Regiões Geográficas
 CREATE TABLE regioes (
     id_regiao SERIAL PRIMARY KEY,
     nome_regiao VARCHAR(100) NOT NULL,
@@ -53,7 +43,7 @@ CREATE TABLE regioes (
     longitude DECIMAL(9,6)
 );
 
--- Dimensão 2: Estações de Monitoramento
+-- Dimensão 2: Estações de Monitoramento instaladas
 CREATE TABLE estacoes_monitoramento (
     id_estacao SERIAL PRIMARY KEY,
     nome_estacao VARCHAR(100) NOT NULL,
@@ -62,7 +52,7 @@ CREATE TABLE estacoes_monitoramento (
     status_operacional VARCHAR(20) DEFAULT 'Ativa'
 );
 
--- Dimensão 3: Sensores
+-- Dimensão 3: Sensores acoplados nas estações
 CREATE TABLE sensores (
     id_sensor SERIAL PRIMARY KEY,
     id_estacao INT REFERENCES estacoes_monitoramento(id_estacao) ON DELETE CASCADE,
@@ -70,7 +60,7 @@ CREATE TABLE sensores (
     unidade_medida VARCHAR(20) NOT NULL 
 );
 
--- Factual: Leituras Climáticas
+-- Factual: Histórico de leituras realizadas pelos sensores
 CREATE TABLE leituras_climaticas (
     id_leitura BIGSERIAL PRIMARY KEY,
     id_sensor INT REFERENCES sensores(id_sensor) ON DELETE CASCADE,
@@ -78,7 +68,7 @@ CREATE TABLE leituras_climaticas (
     valor_medido DECIMAL(10,2) NOT NULL
 );
 
--- Dimensão 4: Fontes de Emissão Industrial
+-- Dimensão 4: Fontes de Emissão Industrial locais
 CREATE TABLE fontes_emissao (
     id_fonte SERIAL PRIMARY KEY,
     id_regiao INT REFERENCES regioes(id_regiao) ON DELETE SET NULL,
@@ -90,62 +80,40 @@ CREATE TABLE fontes_emissao (
 
 ---
 
-## ⚡ 5. Como Executar o Projeto Localmente
+## 🛠️ 4. Detalhes de Implementação
 
-### Pré-requisitos
-*   Java JDK 21 instalado no seu sistema.
-*   IDE recomendada: VS Code ou IntelliJ IDEA.
+Durante o desenvolvimento, liderei as seguintes correções e implementações no repositório:
+*   **Organização e Correção de Arquivos:** Movi os arquivos soltos na raiz para a arquitetura de pacotes Maven correta (`com.clima`), eliminando o arquivo malformado `projeto clima.java` e corrigindo a declaração do compilador Java no `pom.xml`.
+*   **Modelagem de Entidades com JPA:** Criei os mapeamentos declarativos (`@Entity`) e integrei as interfaces do `JpaRepository` para gerenciar as operações de banco sem escrita de SQL manual desnecessária.
+*   **Mecanismo de Sincronização Dinâmica:** Desenvolvi um endpoint `/api/clima/sincronizar` que conecta a OpenWeather API ao Neon DB. Ao receber o nome de uma cidade, o Java a insere como Região, gera uma Estação padrão, instala sensores de Temperatura e Umidade e grava as leituras factuais correspondentes.
+*   **Design Simples e Funcional:** Desenvolvi um design dark minimalista e responsivo que evita exageros estéticos e foca no contraste e na legibilidade dos dados (tabelas e gráficos clássicos em tons de azul, verde e cinza).
+*   **Garantia de Qualidade com Banco H2:** Para evitar que o CI (GitHub Actions) falhasse por falta de credenciais do banco em nuvem, criei configurações locais de teste (`src/test/resources/application.properties`) usando banco em memória H2.
 
-### Executando o Back-end
-1.  Na pasta do projeto `/dashboard.climatico-`, execute o comando para iniciar a aplicação Spring Boot:
+---
+
+## ⚡ 5. Como Executar e Configurar o Projeto
+
+### Rodando o Back-end
+1.  Verifique se o arquivo `application.properties` está atualizado com as credenciais do seu Neon DB ou envie-as via variáveis de ambiente.
+2.  Importe o projeto como um projeto Maven na sua IDE de preferência.
+3.  Execute a classe `Main.java` clicando no botão **Run** ou execute o comando Maven no terminal:
     ```bash
     mvn spring-boot:run
     ```
-2.  O servidor iniciará na porta `8080`. Você pode verificar que está online acessando os endpoints locais no seu navegador:
-    *   Listar regiões: `http://localhost:8080/api/regioes`
-    *   Listar sensores: `http://localhost:8080/api/sensores`
 
-### Executando o Front-end
-1.  Como o frontend é uma página estática interativa que consome a API REST, basta abrir o arquivo `index.html` diretamente no seu navegador ou utilizar a extensão **Live Server** (VS Code).
-2.  No painel superior direito do dashboard, clique no ícone de engrenagem (<i class="fa-solid fa-gear"></i>) e certifique-se de que a URL está definida para `http://localhost:8080`.
-3.  Digite o nome de uma cidade (Ex: Brasília) no campo de busca e clique em **Sincronizar**. O Java fará a requisição para a OpenWeather, criará as entidades no banco local/em nuvem, registrará as leituras e atualizará os gráficos na hora!
+### Rodando o Front-end
+1.  Abra o arquivo `index.html` diretamente no seu navegador.
+2.  Certifique-se de que a URL de conexão no painel de engrenagem está apontada para a porta do seu servidor Java local (`http://localhost:8080`).
+3.  Utilize o campo de texto para buscar cidades e adicionar registros.
 
 ---
 
-## 🧪 6. Testes Automatizados (CI)
+## 🎓 6. Aprendizados Obtidos nesta Lição
 
-A esteira de integração contínua (GitHub Actions) está configurada para compilar a aplicação e rodar os testes a cada commit ou Pull Request. Os testes foram implementados com **MockMvc** e banco de dados **H2 em memória**, garantindo estabilidade e velocidade.
+O desenvolvimento desta entrega final proporcionou aprendizados práticos cruciais para a formação de um engenheiro de software:
 
-Para rodar os testes localmente:
-```bash
-mvn clean test
-```
-
----
-
-## 🚀 7. Como Fazer Deploy
-
-### Deploy do Front-end (Vercel)
-Como o repositório já está atrelado à Vercel, o deploy do frontend é feito automaticamente a cada `git push` para a branch `main`:
-1.  A Vercel hospedará os arquivos estáticos da raiz (`index.html`, `style.css`, `app.js`).
-2.  Abra a aplicação publicada no link da Vercel.
-3.  Configure a URL do backend publicado (Render, Railway, etc.) clicando no ícone de engrenagem no topo superior direito para conectar os gráficos.
-
-### Deploy do Back-end (Render / Railway / Koyeb)
-O projeto contém um `Dockerfile` pronto para buildar o Java.
-1.  Crie um novo Web Service em sua plataforma de hospedagem de contêineres conectando-o a este mesmo repositório do GitHub.
-2.  Configure as seguintes Variáveis de Ambiente no painel do serviço:
-    *   `DB_URL`: O link de conexão do Neon PostgreSQL (ex: `jdbc:postgresql://ep-xyz.neon.tech/projeto_climatico?sslmode=require`)
-    *   `DB_USER`: Usuário do Neon.
-    *   `DB_PASSWORD`: Senha do Neon.
-3.  A plataforma lerá o `Dockerfile`, compilará a aplicação Maven com Java 21 e a disponibilizará online sob um link público `https://[seu-back-end].up.railway.app` ou similar.
-
----
-
-## 📝 8. O que foi corrigido e aprimorado (Code Review)
-*   **Correção de Erros de Sintaxe:** A classe `Clima.java` continha sintaxe quebrada e a declaração de classe ausente. Mapeamos os campos, construtores e criamos a estrutura correta.
-*   **Refatoração para Padrão Maven:** Movemos todos os arquivos Java soltos da raiz para a estrutura organizada `src/main/java/com/clima/...` sob pacotes específicos (`modelo`, `servico`, `controller`, `repository`).
-*   **Correção no `pom.xml`:** O plugin do Spring Boot estava fora da tag `<build><plugins>` o que impedia a compilação.
-*   **Introdução do Spring Boot + JPA:** Implementamos entidades JPA relacionais baseadas no script de banco, criando os repositórios Spring Data correspondentes.
-*   **Sincronização Integrada:** Criamos um endpoint `POST /api/clima/sincronizar` que conecta a OpenWeather API ao banco relacional. Ele cria a região e a estação automaticamente e insere a factual de leituras.
-*   **Interface Web Premium:** Substituímos o prompt de console por um dashboard visual espetacular com gráficos de temperatura, umidade, emissão industrial por região, tabela histórica, formulários de inserção e alertas toast dinâmicos.
+1.  **Code Review e Trabalho em Equipe:** Colaborar no mesmo repositório utilizando Pull Requests (PRs) destacou a importância de manter códigos bem estruturados e limpos. A revisão cuidadosa garante que a alteração de um membro do time não quebre a funcionalidade do outro.
+2.  **Migração da Memória para o Banco de Dados Real:** A transição de dados mantidos temporariamente em memória para a persistência física relacional em nuvem trouxe à tona discussões sobre relacionamentos de chaves estrangeiras, consistência de dados e a importância do mapeamento ORM (JPA/Hibernate) para agilizar o desenvolvimento.
+3.  **Integração Contínua (CI):** A implementação de pipelines com o GitHub Actions automatizou a compilação do código e o disparo de suites de testes a cada push. O aprendizado chave aqui foi a separação de ambientes de desenvolvimento/teste (usando H2) e produção (PostgreSQL), garantindo builds consistentes e livres de dependências externas.
+4.  **Desenvolvimento Full-Stack Integrado:** A coordenação entre chamadas REST assíncronas do front-end com os controladores Spring Boot e a integração com APIs externas solidificou o entendimento sobre arquiteturas web modernas e o tratamento correto de requisições Cross-Origin (CORS).
+5.  **A Estética da Simplicidade no Design:** A experiência prática de design de interfaces ensinou que dashboards corporativos e acadêmicos exigem layout plano, limpo e com foco absoluto na informação útil. Cores sólidas bem contrastadas e componentes retangulares planos comunicam profissionalismo e otimizam a legibilidade para os tomadores de decisão.
