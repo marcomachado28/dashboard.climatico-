@@ -1,6 +1,10 @@
 # 🌍 Dashboard Climático - Monitoramento Ambiental & Emissões
 **Autores:** Marco Túlio de Sousa Machado & Lucas Cortez Leoi  
-**Instituição:** Bootcamp II — Entrega Final (Etapa 3)
+**Instituição:** Bootcamp II — Entrega Final (Etapa 3)  
+
+*   **Repositório GitHub:** [https://github.com/marcomachado28/dashboard.climatico-](https://github.com/marcomachado28/dashboard.climatico-)
+*   **Front-end publicado (Vercel):** [https://dashboard-climatico-lyart.vercel.app/](https://dashboard-climatico-lyart.vercel.app/)
+*   **Back-end publicado (Render):** [https://dashboard-climatico-b0zc.onrender.com](https://dashboard-climatico-b0zc.onrender.com)
 
 ---
 
