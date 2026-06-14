@@ -30,7 +30,7 @@ O banco de dados armazena as informações estruturadas em 5 entidades principai
 ---
 
 ## 🛠️ Tecnologias Utilizadas
-Linguagem Principal: Java 17+
+Linguagem Principal: Java 21
 
 Framework Back-end: Spring Boot (Spring Data JPA / Spring Web)
 
